@@ -2,56 +2,81 @@ model:
   features_extractor_params:
     global_cmvn_path: null
   num_mel_bins: 80
-  subsampling_channel: 256
+  subsampling_channel: 176
   subsampling_dropout: 0.1
   type_encoder: 'conformer'
   type_decoder: 'transformer'
   sinusoidal_pos_enc_style: add
   position_dropout: 0.1
   encoder_params:
-    d_model: 256
-    n_layers: 8
+    d_model: 176
+    n_layers: 16
     nhead: 4
     dropout: 0.1
-    conv_kernel_size: 3
-    conv_mult: 2
-    ffn_mult: 2
+    conv_kernel_size: 31
+    conv_mult: 1
+    ffn_mult: 4
     pre_norm: True
-  ctc_weight: 0.5
-  ctc_linear_dropout: 0.05
+  ctc_weight: 1.0
+  ctc_linear_dropout: 0.1 
   decoder_params:
-    n_layers: 4
-    d_model: 256
+    n_layers: 1
+    d_model: 176
     n_head: 4
     dropout: 0.1
     pre_norm: True
-  label_smoothing_weight: 0.1
-  label_smoothing_normalize_length: true
+  label_smoothing_weight: 0.0
+  label_smoothing_normalize_length: false 
+
+preprocessor:  # Giữ nguyên
+  sample_rate: 16000
+  normalize: per_feature
+  window_size: 0.025
+  window_stride: 0.01
+  window: hann
+  features: 80
+  n_fft: 512
+  log: true
+  frame_splicing: 1
+  dither: 1.0e-05
+  pad_to: 0
+  pad_value: 0.0
 
 dataset:
-  train_filepath: data/train.txt
-  valid_filepath: data/valid.txt
+  # ========== THAY ĐỔI CHÍNH Ở ĐÂY ==========
+  use_huggingface: true                      
+  dataset_name: "linhtran92/viet_bud500"    
+  max_duration: 20.0                        
+  target_sampling_rate: 16000                
+  
+  # BPE model path
   bpe_model_path: data/bpe_2000/bpe.model
-  batch_size: 16
-  num_worker: 4
+
+  batch_size: 128                         
+  num_worker: 12                             
 
 train:
-  output_dir: exps/vivos/conformer
-  num_epoch: 50
-  warmup_steps: 15000
-  lr: 0.001
-  weight_decay: 0
-  acc_steps: 2
-  pretrained_path: null # restore checkpoint for continue training
+  output_dir: exps/bud500/conformer        
+  num_epoch: 30                              
+
+  warmup_steps: 10000                       
+  
+  lr: 2.0                                   
+  weight_decay: 0                            
+  acc_steps: 1                              
+  
+  #Mixed precision (AMP) 
+  use_amp: true                              
+
+  pretrained_path: ../viet-asr/vietasr/model_weights.pth           
+  
   wandb_config:
-    project: vivos
-    tag: conformer
+    project: bud500-asr                      
+    tag: conformer-bud500-baseline           
 
 decode:
-  beamsize: 1
-  kenlm_path: null
-  word_vocab_path: data/word_vocab.txt
+  beam_size: 1                                # Giữ greedy (nhẹ); tăng 5 nếu test với LM
+  kenlm_path: null                           
+  word_vocab_path: data/word_vocab.txt       
   kenlm_alpha: 0.5
   kenlm_beta: 1.5
-
-

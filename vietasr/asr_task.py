@@ -9,19 +9,22 @@ from loguru import logger
 import numpy as np
 from utils import load_config, save_config
 from vietasr.dataset.dataset import ASRDataset, ASRCollator
-from vietasr.model.asr_model import ASRModel
+from vietasr.model import ConformerCTC as ASRModel, AudioToMelSpectrogramPreprocessor
 from vietasr.utils.lr_scheduler import WarmupLR
 from vietasr.utils.utils import calculate_wer
+import torch.cuda.amp as amp
 
 class ASRTask():
     def __init__(self, config: str, output_dir: str=None, device: str="cpu") -> None:
 
         config = load_config(config)
 
-        self.collate_fn = ASRCollator(bpe_model_path=config["dataset"]["bpe_model_path"])
+        self.collate_fn = ASRCollator(
+            bpe_model_path=config["dataset"]["bpe_model_path"],
+            target_sampling_rate=config["dataset"].get("target_sampling_rate", 16000)  # Thêm tham số này
+        )
         self.vocab = self.collate_fn.get_vocab()
         model = ASRModel(vocab_size=len(self.vocab), pad_id=self.collate_fn.pad_id, **config["model"])
-        # print(model)
 
         if output_dir is not None:
             self.output_dir = output_dir
@@ -29,8 +32,11 @@ class ASRTask():
             self.output_dir = config["train"]["output_dir"]
 
         self.device = torch.device(device)
+        preproc_cfg = config.get("preprocessor", {})
+        self.preprocessor = AudioToMelSpectrogramPreprocessor(**preproc_cfg)
 
         self.config = config
+        self.use_amp = self.config["train"].get("use_amp", False)
         self.model = model
         self.ctc_decoder = None
         self.optimizer = None
@@ -61,13 +67,11 @@ class ASRTask():
             wandb.finish()
 
     def train_one_epoch(self) -> dict:
-
-        self.model.train()
+        self.model.train()  # SpecAug sẽ apply ở model forward (nếu training)
 
         train_loss_epoch = 0
         ctc_loss_epoch = 0
         decoder_loss_epoch = 0
-        decoder_acc = 0
 
         dataloader = DataLoader(
             dataset=self.train_dataset,
@@ -81,28 +85,53 @@ class ASRTask():
         num_batch = len(dataloader)
         self.optimizer.zero_grad()
 
-        # for batch in tqdm(dataloader, desc=f"[TRAIN] EPOCH {epoch}", unit="batch"):
-        for i, batch in enumerate(dataloader):
-            
-            batch = [b.to(self.device) for b in batch]
+        # THÊM: AMP scaler với device explicit
+        scaler = amp.GradScaler("cuda", enabled=self.use_amp) if self.use_amp else None
 
-            retval = self.model(*batch)
-            loss = retval["loss"]
+        for i, batch in enumerate(dataloader):
+            # Giữ nguyên preprocess: audio to mel
+            audio = batch[0].to(self.device)
+            audio_lens = batch[1].to(self.device)
+            mel_feats, mel_lens = self.preprocessor(audio, audio_lens)
+            
+            # Targets giữ nguyên
+            targets = batch[2].to(self.device)
+            target_lens = batch[3].to(self.device)
+
+            # Forward với AMP autocast
+            if self.use_amp:
+                with amp.autocast("cuda"):  # Explicit device cho autocast
+                    retval = self.model(mel_feats, mel_lens, targets, target_lens)
+                    loss = retval["loss"]
+            else:
+                retval = self.model(mel_feats, mel_lens, targets, target_lens)
+                loss = retval["loss"]
             
             if torch.isnan(loss):
                 self.optimizer.zero_grad()
                 continue
             
             loss = loss / self.acc_steps
-            loss.backward()
-
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0) 
-
-            if (i + 1) % self.acc_steps == 0:
-                self.optimizer.step()
-                if self.lr_scheduler is not None:
-                    self.lr_scheduler.step()
-                self.optimizer.zero_grad()
+            
+            # Backward với AMP scaler
+            if self.use_amp:
+                scaler.scale(loss).backward()
+                scaler.unscale_(self.optimizer)  # Unscale trước clip
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
+                scaler.step(self.optimizer)
+                scaler.update()
+                if (i + 1) % self.acc_steps == 0:
+                    if self.lr_scheduler is not None:
+                        self.lr_scheduler.step()
+                    self.optimizer.zero_grad()
+            else:
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
+                if (i + 1) % self.acc_steps == 0:
+                    self.optimizer.step()
+                    if self.lr_scheduler is not None:
+                        self.lr_scheduler.step()
+                    self.optimizer.zero_grad()
 
             train_loss = loss.detach().item()
             train_loss_epoch += train_loss
@@ -110,14 +139,11 @@ class ASRTask():
             ctc_loss_epoch += ctc_loss
             decoder_loss = retval["decoder_loss"].detach().item()
             decoder_loss_epoch += decoder_loss
-
-            # num_words_decoder += batch[3].shape[1] * batch[3].shape[0]
-            # decoder_acc += (retval["decoder_out"].argmax(1) == batch[3]).sum().item()
             
             if (i + 1) % 100 == 0:
                 logger.info(f"[TRAIN] EPOCH {self.epoch} | BATCH {i+1}/{num_batch} | loss={train_loss} | ctc_loss={ctc_loss} | decoder_loss={decoder_loss}")
                 predicts = self.model.get_predicts(retval["encoder_out"], retval["encoder_out_lens"])
-                labels = self.model.get_labels(batch[2], batch[3])
+                labels = self.model.get_labels(targets, target_lens)
                 logger.warning(f"+ Label  : {self.collate_fn.ids2text(labels[0])}")
                 logger.warning(f"+ Predict: {self.collate_fn.ids2text(predicts[0])}")
                 wandb.log(
@@ -125,7 +151,7 @@ class ASRTask():
                         "train": {
                             "train_loss": train_loss,
                             "ctc_loss": ctc_loss,
-                            "ctc_loss": ctc_loss
+                            "decoder_loss": decoder_loss
                         },
                         "step": (self.epoch - 1) * num_batch + i + 1
                     }
@@ -142,7 +168,6 @@ class ASRTask():
         valid_loss_epoch = 0
         ctc_loss_epoch = 0
         decoder_loss_epoch = 0
-        decoder_acc = 0
         predicts = []
         labels = []
 
@@ -156,12 +181,24 @@ class ASRTask():
         )
         num_batch = len(dataloader)
         
-        self.model.to_eval_mode()
+        self.model.eval()  # No spec_aug
 
-        for i, batch in  enumerate(dataloader):
-            batch = [b.to(self.device) for b in batch]
+        for i, batch in enumerate(dataloader):
+            # Giữ nguyên preprocess
+            audio = batch[0].to(self.device)
+            audio_lens = batch[1].to(self.device)
+            mel_feats, mel_lens = self.preprocessor(audio, audio_lens)
+            
+            targets = batch[2].to(self.device)
+            target_lens = batch[3].to(self.device)
+
             with torch.no_grad():
-                retval = self.model(*batch)
+                # Forward với AMP autocast (optional cho valid, nhưng consistent)
+                if self.use_amp:
+                    with amp.autocast("cuda"):
+                        retval = self.model(mel_feats, mel_lens, targets, target_lens)
+                else:
+                    retval = self.model(mel_feats, mel_lens, targets, target_lens)
             loss = retval["loss"]
 
             valid_loss = loss.detach().item()
@@ -172,7 +209,7 @@ class ASRTask():
             decoder_loss_epoch += decoder_loss
 
             predict = self.model.get_predicts(retval["encoder_out"], retval["encoder_out_lens"])
-            label = self.model.get_labels(batch[2], batch[3])
+            label = self.model.get_labels(targets, target_lens)
             predict_str = [self.collate_fn.ids2text(x) for x in predict]
             label_str = [self.collate_fn.ids2text(x) for x in label]
             predicts += predict_str
@@ -185,24 +222,36 @@ class ASRTask():
 
         valid_stats = {
             "valid_loss": valid_loss_epoch / num_batch,
-            "vaid_ctc_loss": ctc_loss_epoch / num_batch,
-            "vaid_decoder_loss": decoder_loss_epoch / num_batch,
+            "valid_ctc_loss": ctc_loss_epoch / num_batch,
+            "valid_decoder_loss": decoder_loss_epoch / num_batch,
             "valid_wer": calculate_wer(predicts, labels),
             "valid_cer": calculate_wer(predicts, labels, use_cer=True)
         }
         return valid_stats
 
-    def load_checkpoint(self, pretrained_path: str):
-        checkpoint = torch.load(pretrained_path, map_location="cpu")
-        self.model.load_state_dict(checkpoint["model"])
+    def load_checkpoint(self, checkpoint_path: str):
+        """Load full checkpoint (model + optimizer + etc.) for resume"""
+        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        
+        # Extract state_dict (handle structure)
+        if isinstance(checkpoint, dict):
+            state_dict = checkpoint.get('model', checkpoint.get('state_dict', checkpoint))
+        else:
+            state_dict = checkpoint
+        
+        # Gọi model selective load (nhưng cho resume, có thể load full bằng cách comment selective ở model.py)
+        optimizer_state, lr_scheduler_state, saved_epoch = self.model.load_checkpoint(checkpoint_path)  # Sử dụng model method
+        
+        # Load optimizer/lr_scheduler nếu có
+        if optimizer_state and self.optimizer:
+            self.optimizer.load_state_dict(optimizer_state)
+        if lr_scheduler_state and self.lr_scheduler:
+            self.lr_scheduler.load_state_dict(lr_scheduler_state)
+        if saved_epoch and self.epoch is not None:
+            self.epoch = int(saved_epoch)
+        
         self.model.to(self.device)
-        if checkpoint.get("optimizer") and self.optimizer:
-            self.optimizer.load_state_dict(checkpoint["optimizer"])
-        if checkpoint.get("lr_scheduler") and self.lr_scheduler:
-            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
-        if checkpoint.get("epoch") and self.epoch:
-            self.epoch = int(checkpoint["epoch"])
-        logger.success(f"Loaded checkpoint from: {pretrained_path}")
+        logger.success(f"Loaded full checkpoint from: {checkpoint_path} (model selective + optimizer/lr/epoch)")
 
     def run_train(self):
 
@@ -230,14 +279,39 @@ class ASRTask():
 
         self.model.to(self.device)
 
-        if self.config["train"].get("pretrained_path"):
-            self.load_checkpoint(self.config["train"].get("pretrained_path"))
+        pretrained_path = self.config["train"].get("pretrained_path")
+        if pretrained_path:
+            # Cho pretrained: Chỉ load model (không optimizer/epoch, vì initial)
+            self.model.load_checkpoint(pretrained_path)
+            logger.success(f"Loaded pretrained encoder from: {pretrained_path}")
 
-        self.train_dataset = ASRDataset(meta_filepath=self.config["dataset"]["train_filepath"])
-        self.valid_dataset = ASRDataset(meta_filepath=self.config["dataset"]["valid_filepath"])
+        # THAY ĐỔI CHÍNH Ở ĐÂY: Load dataset từ HuggingFace thay vì file meta
+        dataset_config = self.config["dataset"]
+        
+        # Kiểm tra xem có dùng HuggingFace dataset hay file meta
+        if dataset_config.get("use_huggingface", False):
+            # Load từ HuggingFace
+            dataset_name = dataset_config.get("dataset_name", "linhtran92/viet_bud500")
+            max_duration = dataset_config.get("max_duration", 20.0)
+            
+            logger.info(f"Loading HuggingFace dataset: {dataset_name}")
+            self.train_dataset = ASRDataset(
+                dataset_name=dataset_name,
+                split="train",
+                max_duration=max_duration
+            )
+            self.valid_dataset = ASRDataset(
+                dataset_name=dataset_name,
+                split="validation",
+                max_duration=max_duration
+            )
+        else:
+            # Load từ file meta (cách cũ)
+            logger.info("Loading dataset from meta files")
+            self.train_dataset = ASRDataset(meta_filepath=dataset_config["train_filepath"])
+            self.valid_dataset = ASRDataset(meta_filepath=dataset_config["valid_filepath"])
 
         os.makedirs(self.output_dir, exist_ok=True)
-
         save_config(self.config, os.path.join(self.output_dir, "config.yaml"))
         
         self.init_wandb()
@@ -245,7 +319,7 @@ class ASRTask():
         valid_loss_best = self.valid_loss_best
         valid_acc_best = 0
 
-        for epoch in range(self.epoch, self.num_epoch):
+        for epoch in range(self.epoch or 0, self.num_epoch):
             self.epoch = epoch + 1
             logger.info(f"[TRAIN] EPOCH {epoch + 1}/{self.num_epoch} START")
             train_stats = self.train_one_epoch()
@@ -278,25 +352,38 @@ class ASRTask():
             wandb.log({"train": train_stats, "valid": valid_stats, "epoch": self.epoch}, commit=True)
 
         self.stop_wandb()
-
         logger.success(f"TRAINING ASR MODEL DONE!")
 
     def run_test(
             self,
-            test_meta_filepath: str,
+            test_meta_filepath: str = None,
+            use_huggingface: bool = False,
+            dataset_name: str = None,
         ):
         
         logger.info("="*40)
         logger.info(f"START TESTING ASR MODEL")
         logger.info("="*40)
-        logger.info(f"+ test_meta_filepath: {test_meta_filepath}")
         logger.info(f"+ device: {self.device}")
         logger.info(f"+ Config: {self.config}")
         
         batch_size = self.config["dataset"]["batch_size"]
         num_worker = self.config["dataset"]["num_worker"]
         
-        test_dataset = ASRDataset(test_meta_filepath)
+        if use_huggingface:
+            if dataset_name is None:
+                dataset_name = self.config["dataset"].get("dataset_name", "linhtran92/viet_bud500")
+            max_duration = self.config["dataset"].get("max_duration", 20.0)
+            logger.info(f"Loading test set from HuggingFace: {dataset_name}")
+            test_dataset = ASRDataset(
+                dataset_name=dataset_name,
+                split="test",
+                max_duration=max_duration
+            )
+        else:
+            logger.info(f"Loading test set from meta file: {test_meta_filepath}")
+            test_dataset = ASRDataset(meta_filepath=test_meta_filepath)
+        
         dataloader = DataLoader(
             dataset=test_dataset,
             batch_size=batch_size,
@@ -315,13 +402,20 @@ class ASRTask():
         
         num_batch = len(dataloader)
 
-        self.model.to_eval_mode()
+        self.model.eval()
 
-        for i, batch in  enumerate(dataloader):
-            batch = [b.to(self.device) for b in batch]
+        for i, batch in enumerate(dataloader):
+            audio = batch[0].to(self.device)
+            audio_lens = batch[1].to(self.device)
+            mel_feats, mel_lens = self.preprocessor(audio, audio_lens)
+            
+            targets = batch[2].to(self.device)
+            target_lens = batch[3].to(self.device)
+
             with torch.no_grad():
-                retval = self.model(*batch)
+                retval = self.model(mel_feats, mel_lens, targets, target_lens)  # Dùng mel
             loss = retval["loss"]
+
 
             test_loss = loss.detach().item()
             test_loss_total += test_loss
@@ -354,7 +448,7 @@ class ASRTask():
         wer = calculate_wer(predicts, labels)
         cer = calculate_wer(predicts, labels, use_cer=True)
         
-        logger.success(f"Test set: {test_meta_filepath} done.")
+        logger.success(f"Test done.")
         logger.success(f" + CER={cer}%")
         logger.success(f" + WER={wer}%")
 
@@ -406,46 +500,45 @@ class ASRTask():
         assert encoder_out.shape[1] == encoder_out_lens[0]
 
         with torch.no_grad():
-            logit = self.model.ctc.log_softmax(encoder_out).detach().cpu().squeeze(0).numpy()
+            log_probs = self.model.decoder(encoder_out)  # [1, T, C+1] log-softmax đã có
+            logit = log_probs.detach().cpu().squeeze(0).numpy()
         text = self.ctc_decoder.decode(
             logits=logit,
             beam_width=self.beam_size
         )
-        # remove <blank> from text
         text = text.replace("<blank>", "").strip()
         return text
 
     def transcribe(self, _input: Union[str, np.array, torch.Tensor]) -> str:
         if isinstance(_input, str):
             import librosa
-            _input = librosa.load(_input, sr=16000, mono=True)[0]
-            _input = torch.from_numpy(_input)
+            _input = librosa.load(_input, sr=16000, mono=True)[0]  # Raw audio
+            _input = torch.from_numpy(_input).float()
         elif isinstance(_input, np.array):
-            _input = torch.from_numpy(_input)
+            _input = torch.from_numpy(_input).float()
         elif isinstance(_input, torch.Tensor):
-            _input = _input
+            _input = _input.float()
         else:
             raise NotImplementedError
         if len(_input.shape) == 1:
-            _input = _input.unsqueeze(0)
+            _input = _input.unsqueeze(0)  # [1, T_audio]
 
-        length = torch.Tensor([_input.shape[1]]).long()
+        length = torch.LongTensor([_input.shape[1]])  # [1]
 
         _input = _input.to(self.device)
         length = length.to(self.device)
 
-        self.model.to_eval_mode()
+        self.model.eval()
 
-        # get encoder out
         with torch.no_grad():
-            encoder_out, encoder_out_lens = self.model.forward_encoder(_input, length)
+            # THÊM MỚI: Preprocess raw audio to mel
+            mel_feats, mel_lens = self.preprocessor(_input, length)
+            # Forward encoder với mel
+            encoder_out, encoder_out_lens = self.model.forward_encoder(mel_feats, mel_lens)
 
-        # beamsearch decode
         if self.ctc_decoder is not None:
             text = self.ctc_beamsearch(encoder_out, encoder_out_lens)
         else:
-            # greedy decode
             ids = self.model.get_predicts(encoder_out, encoder_out_lens)[0]
             text = self.collate_fn.ids2text(ids)
         return text
-
