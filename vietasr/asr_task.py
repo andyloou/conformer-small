@@ -91,6 +91,7 @@ class ASRTask():
 
         for i, batch in enumerate(dataloader):
             # Giữ nguyên preprocess: audio to mel
+            batch_count += 1
             audio = batch[0].to(self.device)
             audio_lens = batch[1].to(self.device)
             mel_feats, mel_lens = self.preprocessor(audio, audio_lens)
@@ -162,7 +163,7 @@ class ASRTask():
             "train_loss": train_loss_epoch / batch_count,
             "train_ctc_loss": ctc_loss_epoch / batch_count,
             "train_decoder_loss": decoder_loss_epoch / batch_count,
-        }
+        } 
         return train_stats
 
     def valid_one_epoch(self) -> dict:

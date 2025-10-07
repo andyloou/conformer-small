@@ -18,7 +18,7 @@ class ASRDataset(IterableDataset):
         self.max_duration = max_duration
 
     def __iter__(self):
-        hf_dataset = load_dataset(self.dataset_name, split=self.split, streaming=True)
+        hf_dataset = load_dataset(self.dataset_name, split=self.split)
         hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
 
         for sample in hf_dataset:
