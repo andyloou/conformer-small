@@ -247,6 +247,8 @@ class FilterbankFeatures(nn.Module):
                 mel = F.pad(mel, (0, P), value=self.pad_value)
         # Update length for STFT
         length = (length - self.n_window_size) // self.n_window_stride + 1
+        actual_time_steps = mel.shape[-1]
+        length = torch.clamp(length, max=actual_time_steps)
         return mel, length
 
 # AudioToMelSpectrogramPreprocessor

@@ -9,13 +9,18 @@ from torch.utils.data import Dataset
 from vietasr.dataset.tokenizer import SentencepiecesTokenizer
 from utils import pad_list
 from datasets import load_dataset, Audio
+from torch.utils.data import IterableDataset
 
-class ASRDataset(Dataset):
+class ASRDataset(IterableDataset):
     def __init__(self, dataset_name="linhtran92/viet_bud500", split="train", max_duration=12.0):
-        hf_dataset = load_dataset(dataset_name, split=split)
+        self.dataset_name = dataset_name
+        self.split = split
+        self.max_duration = max_duration
+
+    def __iter__(self):
+        hf_dataset = load_dataset(self.dataset_name, split=self.split, streaming=True)
         hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
 
-        data = []
         for sample in hf_dataset:
             audio_info = sample["audio"]
             audio_path = audio_info.get("path", None)
@@ -30,31 +35,23 @@ class ASRDataset(Dataset):
                 buffer = io.BytesIO(audio_bytes)
                 waveform, sample_rate = torchaudio.load(buffer)
             else:
-                raise ValueError("Audio sample không có path hoặc bytes!")
+                logger.warning("Audio sample không có path hoặc bytes, skip!")
+                continue
 
             # Stereo → mono
             if waveform.shape[0] > 1:
                 waveform = waveform[0, :]
 
             duration = waveform.shape[-1] / sample_rate
-            if duration > max_duration:
+            if duration > self.max_duration:
                 continue
 
-            data.append({
-                "audio_array": waveform,   # giữ tensor luôn, không cần numpy nữa
+            yield {
+                "audio_array": waveform,
                 "sample_rate": sample_rate,
                 "text": text,
                 "duration": duration
-            })
-        self.data = data
-
-    def __getitem__(self, index):
-        return self.data[index]
-
-    def __len__(self):
-        return len(self.data)
-    
-
+            }
     
 class ASRCollator():
     def __init__(
@@ -86,6 +83,9 @@ class ASRCollator():
         return ids
         
     def ids2text(self, ids: List[int]):
+        if isinstance(ids, torch.Tensor):
+            ids = ids.tolist()
+
         tokens = [self.ids2token[i] for i in ids if i not in [self.blank_id, self.unk_id, self.pad_id]]
         text = self.tokenizer.tokens2text(tokens)
         return text
@@ -99,7 +99,7 @@ class ASRCollator():
         for sample in batch:
             # Lấy audio array từ sample
             audio_array = sample['audio_array']
-            sampling_rate = sample['sampling_rate']
+            sampling_rate = sample['sample_rate']
             text = sample['text']
             
             # Convert numpy array sang tensor

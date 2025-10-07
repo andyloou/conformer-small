@@ -77,16 +77,17 @@ class ASRTask():
             dataset=self.train_dataset,
             num_workers=self.num_worker,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
             drop_last=False,
             collate_fn=self.collate_fn
         )
 
-        num_batch = len(dataloader)
+        #num_batch = len(dataloader)
+        batch_count = 0
         self.optimizer.zero_grad()
 
         # THÊM: AMP scaler với device explicit
-        scaler = amp.GradScaler("cuda", enabled=self.use_amp) if self.use_amp else None
+        scaler = torch.cuda.amp.GradScaler(init_scale=2.**16, enabled=self.use_amp)
 
         for i, batch in enumerate(dataloader):
             # Giữ nguyên preprocess: audio to mel
@@ -100,7 +101,7 @@ class ASRTask():
 
             # Forward với AMP autocast
             if self.use_amp:
-                with amp.autocast("cuda"):  # Explicit device cho autocast
+                with torch.cuda.amp.autocast(enabled = True):  # Explicit device cho autocast
                     retval = self.model(mel_feats, mel_lens, targets, target_lens)
                     loss = retval["loss"]
             else:
@@ -141,11 +142,11 @@ class ASRTask():
             decoder_loss_epoch += decoder_loss
             
             if (i + 1) % 100 == 0:
-                logger.info(f"[TRAIN] EPOCH {self.epoch} | BATCH {i+1}/{num_batch} | loss={train_loss} | ctc_loss={ctc_loss} | decoder_loss={decoder_loss}")
+                logger.info(f"[TRAIN] EPOCH {self.epoch} | BATCH {i+1} | loss={train_loss} | ctc_loss={ctc_loss} | decoder_loss={decoder_loss}")
                 predicts = self.model.get_predicts(retval["encoder_out"], retval["encoder_out_lens"])
                 labels = self.model.get_labels(targets, target_lens)
-                logger.warning(f"+ Label  : {self.collate_fn.ids2text(labels[0])}")
-                logger.warning(f"+ Predict: {self.collate_fn.ids2text(predicts[0])}")
+                logger.warning(f"+ Label  : {self.collate_fn.ids2text(labels[0].tolist())}")
+                logger.warning(f"+ Predict: {self.collate_fn.ids2text(predicts[0].tolist())}")
                 wandb.log(
                     {
                         "train": {
@@ -153,14 +154,14 @@ class ASRTask():
                             "ctc_loss": ctc_loss,
                             "decoder_loss": decoder_loss
                         },
-                        "step": (self.epoch - 1) * num_batch + i + 1
+                        "step": (self.epoch - 1)  + i + 1
                     }
                 )
 
         train_stats = {
-            "train_loss": train_loss_epoch / num_batch,
-            "train_ctc_loss": ctc_loss_epoch / num_batch,
-            "train_decoder_loss": decoder_loss_epoch / num_batch,
+            "train_loss": train_loss_epoch / batch_count,
+            "train_ctc_loss": ctc_loss_epoch / batch_count,
+            "train_decoder_loss": decoder_loss_epoch / batch_count,
         }
         return train_stats
 
@@ -179,12 +180,13 @@ class ASRTask():
             drop_last=False,
             collate_fn=self.collate_fn
         )
-        num_batch = len(dataloader)
-        
+        #num_batch = len(dataloader)
+        batch_count = 0
         self.model.eval()  # No spec_aug
 
         for i, batch in enumerate(dataloader):
             # Giữ nguyên preprocess
+            batch_count += 1
             audio = batch[0].to(self.device)
             audio_lens = batch[1].to(self.device)
             mel_feats, mel_lens = self.preprocessor(audio, audio_lens)
@@ -195,11 +197,12 @@ class ASRTask():
             with torch.no_grad():
                 # Forward với AMP autocast (optional cho valid, nhưng consistent)
                 if self.use_amp:
-                    with amp.autocast("cuda"):
+                    with torch.cuda.amp.autocast(enabled=True):
                         retval = self.model(mel_feats, mel_lens, targets, target_lens)
+                        loss = retval["loss"]
                 else:
                     retval = self.model(mel_feats, mel_lens, targets, target_lens)
-            loss = retval["loss"]
+                    loss = retval["loss"]
 
             valid_loss = loss.detach().item()
             valid_loss_epoch += valid_loss
@@ -216,14 +219,14 @@ class ASRTask():
             labels += label_str
             
             if (i + 1) % 100 == 0:
-                logger.info(f"[VALID] EPOCH {self.epoch} | BATCH {i+1}/{num_batch} | loss={valid_loss} | ctc_loss={ctc_loss} | decoder_loss={decoder_loss}")
+                logger.info(f"[VALID] EPOCH {self.epoch} | BATCH {i+1} | loss={valid_loss} | ctc_loss={ctc_loss} | decoder_loss={decoder_loss}")
                 logger.warning(f"+ Label  : {label_str[0]}")
                 logger.warning(f"+ Predict: {predict_str[0]}")
 
         valid_stats = {
-            "valid_loss": valid_loss_epoch / num_batch,
-            "valid_ctc_loss": ctc_loss_epoch / num_batch,
-            "valid_decoder_loss": decoder_loss_epoch / num_batch,
+            "valid_loss": valid_loss_epoch / batch_count,
+            "valid_ctc_loss": ctc_loss_epoch / batch_count,
+            "valid_decoder_loss": decoder_loss_epoch / batch_count,
             "valid_wer": calculate_wer(predicts, labels),
             "valid_cer": calculate_wer(predicts, labels, use_cer=True)
         }
@@ -278,7 +281,8 @@ class ASRTask():
         )
 
         self.model.to(self.device)
-
+        self.preprocessor.to(self.device)
+    
         pretrained_path = self.config["train"].get("pretrained_path")
         if pretrained_path:
             # Cho pretrained: Chỉ load model (không optimizer/epoch, vì initial)
@@ -400,11 +404,12 @@ class ASRTask():
         predicts = []
         labels = []
         
-        num_batch = len(dataloader)
-
+        #num_batch = len(dataloader)
+        batch_count = 0
         self.model.eval()
 
         for i, batch in enumerate(dataloader):
+            batch_count += 1
             audio = batch[0].to(self.device)
             audio_lens = batch[1].to(self.device)
             mel_feats, mel_lens = self.preprocessor(audio, audio_lens)
@@ -441,7 +446,7 @@ class ASRTask():
             labels += label_str
             
             if (i + 1) % 10 == 0:
-                logger.info(f"[TEST] BATCH {i+1}/{num_batch} | loss={test_loss} | ctc_loss={test_ctc_loss} | decoder_loss={test_decoder_loss}")
+                logger.info(f"[TEST] BATCH {i+1}| loss={test_loss} | ctc_loss={test_ctc_loss} | decoder_loss={test_decoder_loss}")
                 logger.warning(f"+ Label  : {label_str[0]}")
                 logger.warning(f"+ Predict: {predict_str[0]}")
         

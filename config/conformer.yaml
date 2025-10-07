@@ -46,29 +46,29 @@ dataset:
   # ========== THAY ĐỔI CHÍNH Ở ĐÂY ==========
   use_huggingface: true                      
   dataset_name: "linhtran92/viet_bud500"    
-  max_duration: 20.0                        
+  max_duration: 15.0                        
   target_sampling_rate: 16000                
   
   # BPE model path
   bpe_model_path: data/bpe_2000/bpe.model
 
-  batch_size: 128                         
+  batch_size: 64                         
   num_worker: 12                             
 
 train:
   output_dir: exps/bud500/conformer        
-  num_epoch: 30                              
+  num_epoch: 3                              
 
   warmup_steps: 10000                       
   
   lr: 2.0                                   
   weight_decay: 0                            
-  acc_steps: 1                              
+  acc_steps: 8                              
   
   #Mixed precision (AMP) 
   use_amp: true                              
 
-  pretrained_path: ../viet-asr/vietasr/model_weights.pth           
+  pretrained_path: /home/andyloou/conformer-small/vietasr/model_weights.pth           
   
   wandb_config:
     project: bud500-asr                      
