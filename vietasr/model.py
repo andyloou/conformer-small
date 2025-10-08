@@ -1,4 +1,5 @@
 import math
+from loguru import logger
 import random
 import torch
 from torch import nn
@@ -992,10 +993,9 @@ class ConformerCTC(nn.Module):
         for i in range(batch_size):
             labels.append(targets[i, :target_lens[i]])
         return labels
-
-    def load_checkpoint(self, checkpoint_path):
+    def load_checkpoint(self, checkpoint_path: str, resume_mode: str = "selective"):
         checkpoint = torch.load(checkpoint_path, map_location='cpu')
-        
+
         # FLEXIBLE: Handle 'model', 'state_dict', hoặc raw dict
         if isinstance(checkpoint, dict):
             state_dict = checkpoint.get('model', checkpoint.get('state_dict', checkpoint))
@@ -1006,18 +1006,37 @@ class ConformerCTC(nn.Module):
         else:
             state_dict = checkpoint  # Raw weights
             optimizer_state = lr_scheduler_state = epoch = None
-        
+
         if not isinstance(state_dict, dict):
             raise ValueError(f"Invalid checkpoint structure at {checkpoint_path}: No 'model' or 'state_dict' found.")
-        
-        model_state_dict = self.state_dict()
 
+        model_state_dict = self.state_dict()
         matched_state_dict = {}
         skipped_keys = []
-        for key in state_dict.keys():
+
+        if resume_mode == "selective":
             # Selective: Chỉ load encoder (an toàn cho pretrained English)
-            # Nếu muốn full load (resume), comment dòng if và load hết
-            if key.startswith('encoder.'):
+            logger.info("Selective load: Chỉ load encoder weights")
+            for key in state_dict.keys():
+                if key.startswith('encoder.'):
+                    if key in model_state_dict:
+                        if state_dict[key].shape == model_state_dict[key].shape:
+                            matched_state_dict[key] = state_dict[key]
+                        else:
+                            skipped_keys.append(f"{key} (shape mismatch)")
+                    else:
+                        skipped_keys.append(f"{key} (not in model)")
+                else:
+                    skipped_keys.append(key)  # Bỏ decoder, spec_aug, etc.
+
+            # Warn nếu encoder key missing
+            for key in model_state_dict.keys():
+                if key.startswith('encoder.') and key not in matched_state_dict:
+                    logger.warning(f"Encoder key {key} not found in checkpoint (random init)")
+        else:
+            # Full: Load tất cả (cho pretrained Vietnamese hoặc resume)
+            logger.info("Full load: Load cả encoder và decoder weights")
+            for key in state_dict.keys():
                 if key in model_state_dict:
                     if state_dict[key].shape == model_state_dict[key].shape:
                         matched_state_dict[key] = state_dict[key]
@@ -1025,22 +1044,21 @@ class ConformerCTC(nn.Module):
                         skipped_keys.append(f"{key} (shape mismatch)")
                 else:
                     skipped_keys.append(f"{key} (not in model)")
-            else:
-                skipped_keys.append(key)  # Bỏ decoder, spec_aug, etc.
 
-        # Warn nếu encoder key missing
-        for key in model_state_dict.keys():
-            if key.startswith('encoder.') and key not in matched_state_dict:
-                print(f"Warning: Encoder key {key} not found in checkpoint (random init)")
+            # Warn nếu key nào trong model không có trong checkpoint
+            for key in model_state_dict.keys():
+                if key not in matched_state_dict:
+                    logger.warning(f"Model key {key} not found in checkpoint (random init)")
 
         model_state_dict.update(matched_state_dict)
         self.load_state_dict(model_state_dict)
-        
-        print(f"Loaded checkpoint from {checkpoint_path}. Matched {len(matched_state_dict)} keys (encoder only).")
+
+        logger.info(f"Loaded checkpoint from {checkpoint_path}. Matched {len(matched_state_dict)} keys (mode: {resume_mode}).")
         if skipped_keys:
-            print(f"Skipped: {len(skipped_keys)} keys (e.g., {skipped_keys[:5]})")
-        print("Decoder remains random (for Vietnamese vocab).")
-        
+            logger.info(f"Skipped: {len(skipped_keys)} keys (e.g., {skipped_keys[:5]})")
+        if resume_mode == "selective":
+            logger.info("Decoder remains random (for Vietnamese vocab).")
+
         # Return extras cho resume
         return optimizer_state, lr_scheduler_state, epoch
 

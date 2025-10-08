@@ -1,255 +1,394 @@
 nohup: ignoring input
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:21 - ============================================================
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:22 - ASR Training Script
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:23 - ============================================================
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:24 - Config file: config/conformer.yaml
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:25 - Output directory: from config
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:26 - Device: cuda
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:27 - Resume checkpoint: None
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:28 - W&B logging: Enabled
-2025-10-07 04:38:10.481 | INFO     | __main__:<module>:29 - ============================================================
-2025-10-07 04:38:10.965 | INFO     | vietasr.asr_task:run_train:262 - ========================================
-2025-10-07 04:38:10.965 | INFO     | vietasr.asr_task:run_train:263 - START TRAINING ASR MODEL
-2025-10-07 04:38:10.965 | INFO     | vietasr.asr_task:run_train:264 - ========================================
-2025-10-07 04:38:10.965 | INFO     | vietasr.asr_task:run_train:265 - Config: {'model': {'features_extractor_params': {'global_cmvn_path': None}, 'num_mel_bins': 80, 'subsampling_channel': 176, 'subsampling_dropout': 0.1, 'type_encoder': 'conformer', 'type_decoder': 'transformer', 'sinusoidal_pos_enc_style': 'add', 'position_dropout': 0.1, 'encoder_params': {'d_model': 176, 'n_layers': 16, 'nhead': 4, 'dropout': 0.1, 'conv_kernel_size': 31, 'conv_mult': 1, 'ffn_mult': 4, 'pre_norm': True}, 'ctc_weight': 1.0, 'ctc_linear_dropout': 0.1, 'decoder_params': {'n_layers': 1, 'd_model': 176, 'n_head': 4, 'dropout': 0.1, 'pre_norm': True}, 'label_smoothing_weight': 0.0, 'label_smoothing_normalize_length': False}, 'preprocessor': {'sample_rate': 16000, 'normalize': 'per_feature', 'window_size': 0.025, 'window_stride': 0.01, 'window': 'hann', 'features': 80, 'n_fft': 512, 'log': True, 'frame_splicing': 1, 'dither': 1e-05, 'pad_to': 0, 'pad_value': 0.0}, 'dataset': {'use_huggingface': True, 'dataset_name': 'linhtran92/viet_bud500', 'max_duration': 15.0, 'target_sampling_rate': 16000, 'bpe_model_path': 'data/bpe_2000/bpe.model', 'batch_size': 64, 'num_worker': 12}, 'train': {'output_dir': 'exps/bud500/conformer', 'num_epoch': 3, 'warmup_steps': 10000, 'lr': 2.0, 'weight_decay': 0, 'acc_steps': 8, 'use_amp': True, 'pretrained_path': '/home/andyloou/conformer-small/vietasr/model_weights.pth', 'wandb_config': {'project': 'bud500-asr', 'tag': 'conformer-bud500-baseline'}}, 'decode': {'beam_size': 1, 'kenlm_path': None, 'word_vocab_path': 'data/word_vocab.txt', 'kenlm_alpha': 0.5, 'kenlm_beta': 1.5}}
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:23 - ============================================================
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:24 - ASR Training Script
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:25 - ============================================================
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:26 - Config file: config/conformer.yaml
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:27 - Output directory: from config
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:28 - Device: cuda
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:29 - Resume checkpoint: exps/bud500/conformer/epoch_1.pt
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:30 - W&B logging: Enabled
+2025-10-07 14:31:13.022 | INFO     | __main__:<module>:31 - ============================================================
+2025-10-07 14:31:13.489 | INFO     | __main__:<module>:48 - Will resume training from: exps/bud500/conformer/epoch_1.pt
+2025-10-07 14:31:13.489 | INFO     | vietasr.asr_task:run_train:262 - ========================================
+2025-10-07 14:31:13.489 | INFO     | vietasr.asr_task:run_train:263 - START TRAINING ASR MODEL
+2025-10-07 14:31:13.489 | INFO     | vietasr.asr_task:run_train:264 - ========================================
+2025-10-07 14:31:13.489 | INFO     | vietasr.asr_task:run_train:265 - Config: {'model': {'features_extractor_params': {'global_cmvn_path': None}, 'num_mel_bins': 80, 'subsampling_channel': 176, 'subsampling_dropout': 0.1, 'type_encoder': 'conformer', 'type_decoder': 'transformer', 'sinusoidal_pos_enc_style': 'add', 'position_dropout': 0.1, 'encoder_params': {'d_model': 176, 'n_layers': 16, 'nhead': 4, 'dropout': 0.1, 'conv_kernel_size': 31, 'conv_mult': 1, 'ffn_mult': 4, 'pre_norm': True}, 'ctc_weight': 1.0, 'ctc_linear_dropout': 0.1, 'decoder_params': {'n_layers': 1, 'd_model': 176, 'n_head': 4, 'dropout': 0.1, 'pre_norm': True}, 'label_smoothing_weight': 0.0, 'label_smoothing_normalize_length': False}, 'preprocessor': {'sample_rate': 16000, 'normalize': 'per_feature', 'window_size': 0.025, 'window_stride': 0.01, 'window': 'hann', 'features': 80, 'n_fft': 512, 'log': True, 'frame_splicing': 1, 'dither': 1e-05, 'pad_to': 0, 'pad_value': 0.0}, 'dataset': {'use_huggingface': True, 'dataset_name': 'linhtran92/viet_bud500', 'max_duration': 15.0, 'target_sampling_rate': 16000, 'bpe_model_path': 'data/bpe_2000/bpe.model', 'batch_size': 64, 'num_worker': 12}, 'train': {'output_dir': 'exps/bud500/conformer', 'num_epoch': 30, 'warmup_steps': 5000, 'lr': 0.001, 'weight_decay': 1e-06, 'acc_steps': 1, 'use_amp': True, 'pretrained_path': 'exps/bud500/conformer/epoch_1.pt', 'resume_mode': 'full', 'wandb_config': {'project': 'bud500-asr', 'tag': 'conformer-bud500-baseline'}}, 'decode': {'beam_size': 1, 'kenlm_path': None, 'word_vocab_path': 'data/word_vocab.txt', 'kenlm_alpha': 0.5, 'kenlm_beta': 1.5}}
 /home/andyloou/conformer-small/vietasr/model.py:997: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
   checkpoint = torch.load(checkpoint_path, map_location='cpu')
-2025-10-07 04:38:11.462 | SUCCESS  | vietasr.asr_task:run_train:291 - Loaded pretrained encoder from: /home/andyloou/conformer-small/vietasr/model_weights.pth
-2025-10-07 04:38:11.462 | INFO     | vietasr.asr_task:run_train:302 - Loading HuggingFace dataset: linhtran92/viet_bud500
-2025-10-07 04:38:11.478 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 1/3 START
+2025-10-07 14:31:13.978 | INFO     | vietasr.model:load_checkpoint:1038 - Full load: Load cả encoder và decoder weights
+2025-10-07 14:31:13.992 | INFO     | vietasr.model:load_checkpoint:1056 - Loaded checkpoint from exps/bud500/conformer/epoch_1.pt. Matched 648 keys (mode: full).
+2025-10-07 14:31:13.994 | SUCCESS  | vietasr.asr_task:run_train:291 - Loaded pretrained encoder from: exps/bud500/conformer/epoch_1.pt with mode: full
+2025-10-07 14:31:13.994 | INFO     | vietasr.asr_task:run_train:302 - Loading HuggingFace dataset: linhtran92/viet_bud500
+2025-10-07 14:31:14.011 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 1/30 START
 /home/andyloou/conformer-small/vietasr/asr_task.py:90: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
   scaler = torch.cuda.amp.GradScaler(init_scale=2.**16, enabled=self.use_amp)
-Loaded checkpoint from /home/andyloou/conformer-small/vietasr/model_weights.pth. Matched 646 keys (encoder only).
-Skipped: 4 keys (e.g., ['preprocessor.featurizer.window', 'preprocessor.featurizer.fb', 'decoder.decoder_layers.0.weight', 'decoder.decoder_layers.0.bias'])
-Decoder remains random (for Vietnamese vocab).
 /home/andyloou/conformer-small/vietasr/asr_task.py:105: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
   with torch.cuda.amp.autocast(enabled = True):  # Explicit device cho autocast
-2025-10-07 04:38:32.089 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 100 | loss=0.8619556427001953 | ctc_loss=6.8956451416015625 | decoder_loss=0.0
-2025-10-07 04:38:32.102 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : anh sẽ cứu em mà anh đã chuẩn bị sn
-2025-10-07 04:38:32.102 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:38:42.632 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 200 | loss=0.7927607297897339 | ctc_loss=6.342085838317871 | decoder_loss=0.0
-2025-10-07 04:38:42.640 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : khi sự sống và cái chết chỉ cách nhau
-2025-10-07 04:38:42.640 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:38:52.829 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 300 | loss=0.750787079334259 | ctc_loss=6.006296634674072 | decoder_loss=0.0
-2025-10-07 04:38:52.838 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : tuệ nhi người tạo ra các mẫu thiết kế
-2025-10-07 04:38:52.838 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: có
-2025-10-07 04:39:02.585 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 400 | loss=0.8667994737625122 | ctc_loss=6.934395790100098 | decoder_loss=0.0
-2025-10-07 04:39:02.593 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : mục nát để lại khoảng trống ở giữa cây
-2025-10-07 04:39:02.593 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:39:13.257 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 500 | loss=0.7947735786437988 | ctc_loss=6.358188629150391 | decoder_loss=0.0
-2025-10-07 04:39:13.267 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : vừa bị bắn trọng thương hắn ta cần có
-2025-10-07 04:39:13.267 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:39:23.285 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 600 | loss=0.7536754608154297 | ctc_loss=6.0294036865234375 | decoder_loss=0.0
-2025-10-07 04:39:23.293 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : ràng chuyện tình cảm càng phải rõ ràng
-2025-10-07 04:39:23.293 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: không của của
-2025-10-07 04:39:33.691 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 700 | loss=0.8893489837646484 | ctc_loss=7.1147918701171875 | decoder_loss=0.0
-2025-10-07 04:39:33.699 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : bà cả rất hài lòng khi nghe những lời
-2025-10-07 04:39:33.699 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:39:44.420 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 800 | loss=0.7800260782241821 | ctc_loss=6.240208625793457 | decoder_loss=0.0
-2025-10-07 04:39:44.429 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : mong muốn này đối với cô nửa thực nửa hư
-2025-10-07 04:39:44.429 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: tôi
-2025-10-07 04:39:56.099 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 900 | loss=0.7580482959747314 | ctc_loss=6.064386367797852 | decoder_loss=0.0
-2025-10-07 04:39:56.108 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : sổ nhật ký điều trị tâm lý và hiểu vấn
-2025-10-07 04:39:56.108 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:40:06.198 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1000 | loss=0.8303651809692383 | ctc_loss=6.642921447753906 | decoder_loss=0.0
-2025-10-07 04:40:06.206 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : có biết vì sao em lại thích anh nhiều
-2025-10-07 04:40:06.206 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:40:16.475 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1100 | loss=0.8053432106971741 | ctc_loss=6.442745685577393 | decoder_loss=0.0
-2025-10-07 04:40:16.482 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : bắt con trai tôi phải xoa bóp cho cô sao
-2025-10-07 04:40:16.482 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:40:26.649 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1200 | loss=0.739012598991394 | ctc_loss=5.912100791931152 | decoder_loss=0.0
-2025-10-07 04:40:26.657 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : sự thật không hẳn thế bạn là sự tiếp nối
-2025-10-07 04:40:26.657 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: không không
-2025-10-07 04:40:37.232 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1300 | loss=0.8467321395874023 | ctc_loss=6.773857116699219 | decoder_loss=0.0
-2025-10-07 04:40:37.240 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : chuyện bất hạnh như thế này sau khi khám
-2025-10-07 04:40:37.240 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:40:47.127 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1400 | loss=0.7903529405593872 | ctc_loss=6.322823524475098 | decoder_loss=0.0
-2025-10-07 04:40:47.135 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : cô ba dịu dàng dồn hết thảy mọi người
-2025-10-07 04:40:47.135 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:40:58.535 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1500 | loss=0.7335784435272217 | ctc_loss=5.868627548217773 | decoder_loss=0.0
-2025-10-07 04:40:58.542 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : giữa chốn đông người này khiến tôi giật
-2025-10-07 04:40:58.542 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: thì
-2025-10-07 04:41:08.456 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1600 | loss=0.843044638633728 | ctc_loss=6.744357109069824 | decoder_loss=0.0
-2025-10-07 04:41:08.464 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : bằng vệ tinh chứ còn đâu với nhiều cách
-2025-10-07 04:41:08.464 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: có có
-2025-10-07 04:41:18.420 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1700 | loss=0.7813707590103149 | ctc_loss=6.2509660720825195 | decoder_loss=0.0
-2025-10-07 04:41:18.428 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : đồn đi khắp xóm anh biết chắc là như vậy
-2025-10-07 04:41:18.428 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:41:29.271 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1800 | loss=0.7389199733734131 | ctc_loss=5.911359786987305 | decoder_loss=0.0
-2025-10-07 04:41:29.279 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : tiếng pháp là ngôn ngữ được học nhiều
-2025-10-07 04:41:29.279 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:41:39.228 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 1900 | loss=0.8525875806808472 | ctc_loss=6.820700645446777 | decoder_loss=0.0
-2025-10-07 04:41:39.236 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : mình thì giọt nước mắt khẽ lăn hạnh phúc
-2025-10-07 04:41:39.236 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: người không
-2025-10-07 04:41:50.374 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 2000 | loss=0.786262035369873 | ctc_loss=6.290096282958984 | decoder_loss=0.0
-2025-10-07 04:41:50.381 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : hưởng tới việc liệu họ có tái phạm tội
-2025-10-07 04:41:50.381 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:42:01.321 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 2100 | loss=0.735908567905426 | ctc_loss=5.887268543243408 | decoder_loss=0.0
-2025-10-07 04:42:01.329 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : công việc hay một mối quan hệ
-2025-10-07 04:42:01.329 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:42:11.502 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 2200 | loss=0.8219075202941895 | ctc_loss=6.575260162353516 | decoder_loss=0.0
-2025-10-07 04:42:11.510 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : tôi nên tôi gặp được người giúp đỡ bà ấy
-2025-10-07 04:42:11.510 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: mình là
-2025-10-07 04:42:21.852 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 2300 | loss=0.7819631099700928 | ctc_loss=6.255704879760742 | decoder_loss=0.0
-2025-10-07 04:42:21.860 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : miệng than thở không thể coi thường sức
-2025-10-07 04:42:21.860 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: không yêu
-2025-10-07 04:42:31.550 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 2400 | loss=0.7430956363677979 | ctc_loss=5.944765090942383 | decoder_loss=0.0
-2025-10-07 04:42:31.558 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : đặc biệt có ý nghĩa là chính bác hồ của
-2025-10-07 04:42:31.558 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: 
-2025-10-07 04:42:42.242 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 2500 | loss=0.8257657885551453 | ctc_loss=6.606126308441162 | decoder_loss=0.0
-2025-10-07 04:42:42.248 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : thầy thích nhất hạnh đã nói rằng là đã
-2025-10-07 04:42:42.248 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: là là
-2025-10-07 04:42:53.074 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 2600 | loss=0.7700392007827759 | ctc_loss=6.160313606262207 | decoder_loss=0.0
-2025-10-07 04:42:53.082 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : hạnh phúc bình dị của gia đình đó là
-2025-10-07 04:42:53.082 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: khuẩn
-2025-10-07 04:42:58.857 | INFO     | vietasr.asr_task:train_one_epoch:146 - [TRAIN] EPOCH 1 | BATCH 2700 | loss=0.8678672909736633 | ctc_loss=6.942938327789307 | decoder_loss=0.0
-2025-10-07 04:42:58.865 | WARNING  | vietasr.asr_task:train_one_epoch:149 - + Label  : mà chị biết tự kỷ là cái quái gì đâu
-2025-10-07 04:42:58.865 | WARNING  | vietasr.asr_task:train_one_epoch:150 - + Predict: là
-2025-10-07 06:02:14.469 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 0.019015166861508805, 'train_ctc_loss': 0.15212133489207044, 'train_decoder_loss': 0.0}
-2025-10-07 06:02:14.702 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 1/3 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_1.pt
-2025-10-07 06:02:14.702 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 1/3 START
+2025-10-07 15:52:16.446 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 0.0, 'train_ctc_loss': 0.0, 'train_decoder_loss': 0.0}
+2025-10-07 15:52:16.566 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 1/30 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_1.pt
+2025-10-07 15:52:16.566 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 1/30 START
 /home/andyloou/conformer-small/vietasr/asr_task.py:201: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
   with torch.cuda.amp.autocast(enabled=True):
-2025-10-07 06:02:25.093 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 100 | loss=6.85095739364624 | ctc_loss=6.85095739364624 | decoder_loss=0.0
-2025-10-07 06:02:25.093 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
-2025-10-07 06:02:25.093 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:02:29.084 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 200 | loss=6.9364824295043945 | ctc_loss=6.9364824295043945 | decoder_loss=0.0
-2025-10-07 06:02:29.084 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
-2025-10-07 06:02:29.084 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:02:33.365 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 300 | loss=6.828736305236816 | ctc_loss=6.828736305236816 | decoder_loss=0.0
-2025-10-07 06:02:33.365 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
-2025-10-07 06:02:33.365 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:02:37.763 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 400 | loss=6.809789657592773 | ctc_loss=6.809789657592773 | decoder_loss=0.0
-2025-10-07 06:02:37.764 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
-2025-10-07 06:02:37.764 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:02:41.787 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 500 | loss=6.780536651611328 | ctc_loss=6.780536651611328 | decoder_loss=0.0
-2025-10-07 06:02:41.787 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
-2025-10-07 06:02:41.787 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:02:45.735 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 600 | loss=6.679873943328857 | ctc_loss=6.679873943328857 | decoder_loss=0.0
-2025-10-07 06:02:45.735 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
-2025-10-07 06:02:45.735 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:02:49.657 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 700 | loss=6.57686710357666 | ctc_loss=6.57686710357666 | decoder_loss=0.0
-2025-10-07 06:02:49.657 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
-2025-10-07 06:02:49.657 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:02:53.686 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 800 | loss=6.787773132324219 | ctc_loss=6.787773132324219 | decoder_loss=0.0
-2025-10-07 06:02:53.686 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
-2025-10-07 06:02:53.686 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:02:57.673 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 900 | loss=6.744726181030273 | ctc_loss=6.744726181030273 | decoder_loss=0.0
-2025-10-07 06:02:57.673 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
-2025-10-07 06:02:57.673 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:03:01.930 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1000 | loss=6.785083770751953 | ctc_loss=6.785083770751953 | decoder_loss=0.0
-2025-10-07 06:03:01.930 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
-2025-10-07 06:03:01.930 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:03:05.795 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1100 | loss=6.762852668762207 | ctc_loss=6.762852668762207 | decoder_loss=0.0
-2025-10-07 06:03:05.795 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
-2025-10-07 06:03:05.796 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:03:09.969 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1200 | loss=6.728285312652588 | ctc_loss=6.728285312652588 | decoder_loss=0.0
-2025-10-07 06:03:09.969 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
-2025-10-07 06:03:09.969 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:03:14.190 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1300 | loss=6.6823248863220215 | ctc_loss=6.6823248863220215 | decoder_loss=0.0
-2025-10-07 06:03:14.190 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
-2025-10-07 06:03:14.190 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:03:18.431 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1400 | loss=6.780421257019043 | ctc_loss=6.780421257019043 | decoder_loss=0.0
-2025-10-07 06:03:18.431 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
-2025-10-07 06:03:18.431 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 06:03:18.900 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': 6.789436018736349, 'valid_ctc_loss': 6.789436018736349, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
-2025-10-07 06:03:18.943 | SUCCESS  | vietasr.asr_task:run_train:353 - saved best model to exps/bud500/conformer/valid_loss_best.pt
-2025-10-07 06:03:18.944 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 1/3 DONE
-2025-10-07 06:03:18.944 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 2/3 START
-2025-10-07 07:24:19.920 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 7.133906234159645e-06, 'train_ctc_loss': 5.707124987327716e-05, 'train_decoder_loss': 0.0}
-2025-10-07 07:24:20.154 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 2/3 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_2.pt
-2025-10-07 07:24:20.154 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 2/3 START
-2025-10-07 07:24:31.252 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 100 | loss=6.852862358093262 | ctc_loss=6.852862358093262 | decoder_loss=0.0
-2025-10-07 07:24:31.252 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
-2025-10-07 07:24:31.252 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:24:35.232 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 200 | loss=6.927891731262207 | ctc_loss=6.927891731262207 | decoder_loss=0.0
-2025-10-07 07:24:35.232 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
-2025-10-07 07:24:35.232 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:24:39.515 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 300 | loss=6.806180953979492 | ctc_loss=6.806180953979492 | decoder_loss=0.0
-2025-10-07 07:24:39.515 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
-2025-10-07 07:24:39.515 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:24:43.914 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 400 | loss=6.7960405349731445 | ctc_loss=6.7960405349731445 | decoder_loss=0.0
-2025-10-07 07:24:43.914 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
-2025-10-07 07:24:43.914 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:24:47.943 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 500 | loss=6.779500961303711 | ctc_loss=6.779500961303711 | decoder_loss=0.0
-2025-10-07 07:24:47.944 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
-2025-10-07 07:24:47.944 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:24:51.892 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 600 | loss=6.6764326095581055 | ctc_loss=6.6764326095581055 | decoder_loss=0.0
-2025-10-07 07:24:51.892 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
-2025-10-07 07:24:51.892 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:24:55.837 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 700 | loss=6.587499141693115 | ctc_loss=6.587499141693115 | decoder_loss=0.0
-2025-10-07 07:24:55.838 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
-2025-10-07 07:24:55.838 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:24:59.876 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 800 | loss=6.767916679382324 | ctc_loss=6.767916679382324 | decoder_loss=0.0
-2025-10-07 07:24:59.876 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
-2025-10-07 07:24:59.876 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:25:03.870 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 900 | loss=6.750412940979004 | ctc_loss=6.750412940979004 | decoder_loss=0.0
-2025-10-07 07:25:03.870 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
-2025-10-07 07:25:03.870 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:25:08.122 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1000 | loss=6.783507347106934 | ctc_loss=6.783507347106934 | decoder_loss=0.0
-2025-10-07 07:25:08.122 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
-2025-10-07 07:25:08.122 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:25:11.979 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1100 | loss=6.754848957061768 | ctc_loss=6.754848957061768 | decoder_loss=0.0
-2025-10-07 07:25:11.979 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
-2025-10-07 07:25:11.979 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:25:16.150 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1200 | loss=6.725551128387451 | ctc_loss=6.725551128387451 | decoder_loss=0.0
-2025-10-07 07:25:16.150 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
-2025-10-07 07:25:16.150 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:25:20.353 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1300 | loss=6.672111511230469 | ctc_loss=6.672111511230469 | decoder_loss=0.0
-2025-10-07 07:25:20.353 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
-2025-10-07 07:25:20.353 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:25:24.578 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1400 | loss=6.766917705535889 | ctc_loss=6.766917705535889 | decoder_loss=0.0
-2025-10-07 07:25:24.578 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
-2025-10-07 07:25:24.578 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 07:25:25.031 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': 6.7796272473820185, 'valid_ctc_loss': 6.7796272473820185, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
-2025-10-07 07:25:25.091 | SUCCESS  | vietasr.asr_task:run_train:353 - saved best model to exps/bud500/conformer/valid_loss_best.pt
-2025-10-07 07:25:25.091 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 2/3 DONE
-2025-10-07 07:25:25.091 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 3/3 START
-2025-10-07 08:48:05.906 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 0.0, 'train_ctc_loss': 0.0, 'train_decoder_loss': 0.0}
-2025-10-07 08:48:06.132 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 3/3 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_3.pt
-2025-10-07 08:48:06.132 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 3/3 START
-2025-10-07 08:48:20.933 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:20.934 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
-2025-10-07 08:48:20.934 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:24.797 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:24.797 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
-2025-10-07 08:48:24.797 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:28.960 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:28.960 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
-2025-10-07 08:48:28.960 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:33.246 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:33.246 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
-2025-10-07 08:48:33.246 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:37.149 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 500 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:37.149 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
-2025-10-07 08:48:37.149 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:40.967 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 600 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:40.967 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
-2025-10-07 08:48:40.967 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:44.755 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 700 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:44.755 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
-2025-10-07 08:48:44.755 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:48.648 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 800 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:48.648 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
-2025-10-07 08:48:48.648 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:52.509 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 900 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:52.509 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
-2025-10-07 08:48:52.509 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:48:56.636 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1000 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:48:56.636 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
-2025-10-07 08:48:56.636 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:49:00.359 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:49:00.359 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
-2025-10-07 08:49:00.359 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:49:04.397 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:49:04.397 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
-2025-10-07 08:49:04.397 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:49:08.472 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:49:08.472 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
-2025-10-07 08:49:08.472 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:49:12.577 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
-2025-10-07 08:49:12.577 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
-2025-10-07 08:49:12.577 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
-2025-10-07 08:49:13.020 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': nan, 'valid_ctc_loss': nan, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
-2025-10-07 08:49:13.020 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 3/3 DONE
-2025-10-07 08:49:13.022 | SUCCESS  | vietasr.asr_task:run_train:360 - TRAINING ASR MODEL DONE!
+2025-10-07 15:52:26.812 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:26.812 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
+2025-10-07 15:52:26.812 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:52:30.743 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:30.743 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
+2025-10-07 15:52:30.743 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:52:34.976 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:34.977 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
+2025-10-07 15:52:34.977 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:52:39.301 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:39.301 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
+2025-10-07 15:52:39.301 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:52:43.269 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 500 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:43.269 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
+2025-10-07 15:52:43.269 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:52:47.161 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 600 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:47.161 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
+2025-10-07 15:52:47.161 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:52:51.036 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 700 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:51.036 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
+2025-10-07 15:52:51.036 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:52:55.001 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 800 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:55.001 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
+2025-10-07 15:52:55.001 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:52:58.921 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 900 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:52:58.921 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
+2025-10-07 15:52:58.921 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:53:03.117 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1000 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:53:03.117 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
+2025-10-07 15:53:03.117 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:53:06.914 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:53:06.914 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
+2025-10-07 15:53:06.914 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:53:11.015 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:53:11.016 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
+2025-10-07 15:53:11.016 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:53:15.162 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:53:15.162 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
+2025-10-07 15:53:15.162 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:53:19.337 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 1 | BATCH 1400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 15:53:19.337 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
+2025-10-07 15:53:19.337 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 15:53:19.803 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': nan, 'valid_ctc_loss': nan, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
+2025-10-07 15:53:19.803 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 1/30 DONE
+2025-10-07 15:53:19.803 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 2/30 START
+2025-10-07 17:13:49.349 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 0.0, 'train_ctc_loss': 0.0, 'train_decoder_loss': 0.0}
+2025-10-07 17:13:49.465 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 2/30 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_2.pt
+2025-10-07 17:13:49.465 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 2/30 START
+2025-10-07 17:13:59.945 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:13:59.945 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
+2025-10-07 17:13:59.945 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:03.865 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:03.865 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
+2025-10-07 17:14:03.866 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:08.063 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:08.063 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
+2025-10-07 17:14:08.063 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:12.385 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:12.385 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
+2025-10-07 17:14:12.385 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:16.328 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 500 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:16.328 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
+2025-10-07 17:14:16.328 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:20.193 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 600 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:20.193 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
+2025-10-07 17:14:20.193 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:24.030 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 700 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:24.030 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
+2025-10-07 17:14:24.030 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:27.966 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 800 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:27.966 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
+2025-10-07 17:14:27.966 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:31.870 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 900 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:31.870 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
+2025-10-07 17:14:31.870 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:36.039 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1000 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:36.040 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
+2025-10-07 17:14:36.040 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:39.809 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:39.809 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
+2025-10-07 17:14:39.809 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:43.911 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:43.911 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
+2025-10-07 17:14:43.911 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:48.038 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:48.038 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
+2025-10-07 17:14:48.038 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:52.178 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 2 | BATCH 1400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 17:14:52.178 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
+2025-10-07 17:14:52.178 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 17:14:52.640 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': nan, 'valid_ctc_loss': nan, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
+2025-10-07 17:14:52.640 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 2/30 DONE
+2025-10-07 17:14:52.640 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 3/30 START
+2025-10-07 18:36:24.518 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 0.0, 'train_ctc_loss': 0.0, 'train_decoder_loss': 0.0}
+2025-10-07 18:36:24.637 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 3/30 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_3.pt
+2025-10-07 18:36:24.637 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 3/30 START
+2025-10-07 18:36:35.064 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:36:35.064 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
+2025-10-07 18:36:35.064 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:36:38.974 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:36:38.974 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
+2025-10-07 18:36:38.974 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:36:43.175 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:36:43.176 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
+2025-10-07 18:36:43.176 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:36:47.486 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:36:47.486 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
+2025-10-07 18:36:47.486 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:36:51.437 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 500 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:36:51.438 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
+2025-10-07 18:36:51.438 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:36:55.301 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 600 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:36:55.302 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
+2025-10-07 18:36:55.302 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:36:59.159 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 700 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:36:59.159 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
+2025-10-07 18:36:59.159 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:37:03.099 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 800 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:37:03.099 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
+2025-10-07 18:37:03.099 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:37:07.003 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 900 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:37:07.003 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
+2025-10-07 18:37:07.003 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:37:11.178 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1000 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:37:11.178 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
+2025-10-07 18:37:11.178 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:37:14.953 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:37:14.953 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
+2025-10-07 18:37:14.953 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:37:19.064 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:37:19.064 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
+2025-10-07 18:37:19.064 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:37:23.218 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:37:23.218 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
+2025-10-07 18:37:23.218 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:37:27.382 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 3 | BATCH 1400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 18:37:27.382 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
+2025-10-07 18:37:27.382 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 18:37:27.842 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': nan, 'valid_ctc_loss': nan, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
+2025-10-07 18:37:27.842 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 3/30 DONE
+2025-10-07 18:37:27.842 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 4/30 START
+2025-10-07 19:57:28.423 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 0.00011355335474150627, 'train_ctc_loss': 0.00011355335474150627, 'train_decoder_loss': 0.0}
+2025-10-07 19:57:28.647 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 4/30 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_4.pt
+2025-10-07 19:57:28.647 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 4/30 START
+2025-10-07 19:57:38.888 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:57:38.888 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
+2025-10-07 19:57:38.888 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:57:42.821 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:57:42.821 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
+2025-10-07 19:57:42.821 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:57:47.058 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:57:47.058 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
+2025-10-07 19:57:47.058 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:57:51.423 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:57:51.423 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
+2025-10-07 19:57:51.423 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:57:55.418 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 500 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:57:55.418 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
+2025-10-07 19:57:55.418 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:57:59.309 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 600 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:57:59.309 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
+2025-10-07 19:57:59.309 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:03.174 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 700 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:58:03.174 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
+2025-10-07 19:58:03.174 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:07.142 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 800 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:58:07.142 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
+2025-10-07 19:58:07.142 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:11.074 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 900 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:58:11.074 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
+2025-10-07 19:58:11.074 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:15.305 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 1000 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:58:15.305 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
+2025-10-07 19:58:15.305 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:19.111 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 1100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:58:19.111 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
+2025-10-07 19:58:19.111 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:23.218 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 1200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:58:23.219 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
+2025-10-07 19:58:23.219 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:27.366 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 1300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:58:27.366 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
+2025-10-07 19:58:27.366 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:31.532 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 4 | BATCH 1400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 19:58:31.533 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
+2025-10-07 19:58:31.533 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 19:58:31.978 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': nan, 'valid_ctc_loss': nan, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
+2025-10-07 19:58:31.978 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 4/30 DONE
+2025-10-07 19:58:31.978 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 5/30 START
+2025-10-07 21:18:16.122 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 0.0, 'train_ctc_loss': 0.0, 'train_decoder_loss': 0.0}
+2025-10-07 21:18:16.349 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 5/30 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_5.pt
+2025-10-07 21:18:16.349 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 5/30 START
+2025-10-07 21:18:26.313 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:26.314 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
+2025-10-07 21:18:26.314 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:18:30.231 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:30.231 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
+2025-10-07 21:18:30.231 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:18:34.427 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:34.427 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
+2025-10-07 21:18:34.427 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:18:38.744 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:38.744 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
+2025-10-07 21:18:38.744 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:18:42.696 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 500 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:42.696 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
+2025-10-07 21:18:42.696 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:18:46.568 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 600 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:46.568 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
+2025-10-07 21:18:46.568 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:18:50.415 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 700 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:50.415 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
+2025-10-07 21:18:50.415 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:18:54.364 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 800 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:54.364 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
+2025-10-07 21:18:54.364 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:18:58.265 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 900 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:18:58.265 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
+2025-10-07 21:18:58.265 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:19:02.459 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 1000 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:19:02.459 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
+2025-10-07 21:19:02.459 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:19:06.253 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 1100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:19:06.253 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
+2025-10-07 21:19:06.253 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:19:10.352 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 1200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:19:10.352 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
+2025-10-07 21:19:10.352 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:19:14.493 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 1300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:19:14.493 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
+2025-10-07 21:19:14.493 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:19:18.634 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 5 | BATCH 1400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 21:19:18.634 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
+2025-10-07 21:19:18.634 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 21:19:19.088 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': nan, 'valid_ctc_loss': nan, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
+2025-10-07 21:19:19.088 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 5/30 DONE
+2025-10-07 21:19:19.088 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 6/30 START
+2025-10-07 22:39:06.540 | SUCCESS  | vietasr.asr_task:run_train:331 - [TRAIN] STATS: {'train_loss': 5.771595530173579e-05, 'train_ctc_loss': 5.771595530173579e-05, 'train_decoder_loss': 0.0}
+2025-10-07 22:39:06.769 | INFO     | vietasr.asr_task:run_train:343 - [TRAIN] EPOCH 6/30 DONE, Save checkpoint to: exps/bud500/conformer/checkpoint_epoch_6.pt
+2025-10-07 22:39:06.769 | INFO     | vietasr.asr_task:run_train:345 - [VALID] EPOCH 6/30 START
+2025-10-07 22:39:16.742 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:16.742 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : với những danh lam thắng cảnh cũng rất
+2025-10-07 22:39:16.742 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:20.637 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:20.637 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : mặt bằng mới đặc biệt lãi suất tiền gửi
+2025-10-07 22:39:20.637 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:24.823 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:24.823 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tiêu biểu nhất của tình hữu nghị anh em
+2025-10-07 22:39:24.823 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:29.124 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:29.124 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : quốc tế cộng sản nguyễn ái quốc cùng với
+2025-10-07 22:39:29.124 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:33.064 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 500 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:33.064 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : nó bảo là công ty nó vẫn còn thiếu một
+2025-10-07 22:39:33.064 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:36.926 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 600 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:36.926 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : vẫn không nói được hết một câu
+2025-10-07 22:39:36.926 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:40.759 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 700 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:40.760 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hiện mà không cần phải sợ ai cả
+2025-10-07 22:39:40.760 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:44.686 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 800 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:44.686 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : lắm cơ mà sao bây giờ lại như gà mắc tóc
+2025-10-07 22:39:44.686 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:48.588 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 900 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:48.588 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : một cái công cụ thì ở mỗi tình huống
+2025-10-07 22:39:48.588 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:52.748 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 1000 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:52.749 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : cả tuần nhưng cũng không chịu gọi điện
+2025-10-07 22:39:52.749 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:39:56.521 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 1100 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:39:56.521 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thì vẫn thường xuyên vắng mặt bà đã nghĩ
+2025-10-07 22:39:56.521 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:40:00.605 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 1200 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:40:00.605 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : hai vợ chồng hà đi về tôi với chồng cũng
+2025-10-07 22:40:00.605 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:40:04.726 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 1300 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:40:04.726 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : tôi sẽ bị án bao nhiêu năm có cơ hội làm
+2025-10-07 22:40:04.726 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:40:08.867 | INFO     | vietasr.asr_task:valid_one_epoch:223 - [VALID] EPOCH 6 | BATCH 1400 | loss=nan | ctc_loss=nan | decoder_loss=0.0
+2025-10-07 22:40:08.867 | WARNING  | vietasr.asr_task:valid_one_epoch:224 - + Label  : thoát khỏi cái làng kinh khủng đó tôi mẹ
+2025-10-07 22:40:08.867 | WARNING  | vietasr.asr_task:valid_one_epoch:225 - + Predict: 
+2025-10-07 22:40:09.314 | SUCCESS  | vietasr.asr_task:run_train:347 - [VALID] STATS: {'valid_loss': nan, 'valid_ctc_loss': nan, 'valid_decoder_loss': 0.0, 'valid_wer': 100.0, 'valid_cer': 100.0}
+2025-10-07 22:40:09.314 | INFO     | vietasr.asr_task:run_train:355 - [VALID] EPOCH 6/30 DONE
+2025-10-07 22:40:09.314 | INFO     | vietasr.asr_task:run_train:329 - [TRAIN] EPOCH 7/30 START
+2025-10-07 23:27:51.164 | ERROR    | __main__:<module>:59 - Training failed with error: DataLoader worker (pid 1254728) is killed by signal: Terminated. 
+Traceback (most recent call last):
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1131, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/multiprocessing/queues.py", line 122, in get
+    return _ForkingPickler.loads(res)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/site-packages/torch/multiprocessing/reductions.py", line 496, in rebuild_storage_fd
+    fd = df.detach()
+         ^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/multiprocessing/resource_sharer.py", line 57, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/multiprocessing/resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/multiprocessing/connection.py", line 507, in Client
+    answer_challenge(c, authkey)
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/multiprocessing/connection.py", line 751, in answer_challenge
+    message = connection.recv_bytes(256)         # reject large message
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/multiprocessing/connection.py", line 215, in recv_bytes
+    buf = self._recv_bytes(maxlength)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/multiprocessing/connection.py", line 413, in _recv_bytes
+    buf = self._recv(4)
+          ^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/multiprocessing/connection.py", line 378, in _recv
+    chunk = read(handle, remaining)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/andyloou/conformer-small/train.py", line 61, in <module>
+    raise e
+  File "/home/andyloou/conformer-small/train.py", line 52, in <module>
+    task.run_train()
+  File "/home/andyloou/conformer-small/vietasr/asr_task.py", line 330, in run_train
+    train_stats = self.train_one_epoch()
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/conformer-small/vietasr/asr_task.py", line 92, in train_one_epoch
+    for i, batch in enumerate(dataloader):
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1327, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1293, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1155, in _try_get_data
+    fs = [tempfile.NamedTemporaryFile() for i in range(fds_limit_margin)]
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1155, in <listcomp>
+    fs = [tempfile.NamedTemporaryFile() for i in range(fds_limit_margin)]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/tempfile.py", line 563, in NamedTemporaryFile
+    file = _io.open(dir, mode, buffering=buffering,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/tempfile.py", line 560, in opener
+    fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/tempfile.py", line 252, in _mkstemp_inner
+    name = next(names)
+           ^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/tempfile.py", line 154, in __next__
+    return ''.join(self.rng.choices(self.characters, k=8))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/random.py", line 493, in choices
+    return [population[floor(random() * n)] for i in _repeat(None, k)]
+                                                     ^^^^^^^^^^^^^^^^
+  File "/home/andyloou/miniconda3/envs/nemo/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 67, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 1254728) is killed by signal: Terminated. 

@@ -14,7 +14,9 @@ if __name__ == '__main__':
                         help='Resume training from checkpoint path (override config)')
     parser.add_argument('--no-wandb', action='store_true',
                         help='Disable Weights & Biases logging')
-    
+    parser.add_argument('--resume_mode', type=str, default = "selective", choices = ["selective", "full"],
+             help='Resume mode: selective (encoder only) or full (encoder + decoder)')
+
     args = parser.parse_args()
     
     # Log training information

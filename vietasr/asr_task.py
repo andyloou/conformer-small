@@ -1,6 +1,6 @@
 import os
 from typing import Union
-
+from loguru import logger
 import torch
 import wandb
 from torch.optim import Adam, AdamW
@@ -15,10 +15,10 @@ from vietasr.utils.utils import calculate_wer
 import torch.cuda.amp as amp
 
 class ASRTask():
-    def __init__(self, config: str, output_dir: str=None, device: str="cpu") -> None:
+    def __init__(self, config: str, output_dir: str=None, device: str="cpu", resume_mode: str= "selective") -> None:
 
         config = load_config(config)
-
+        self.resume_mode = config["train"].get("resume_mode", resume_mode)
         self.collate_fn = ASRCollator(
             bpe_model_path=config["dataset"]["bpe_model_path"],
             target_sampling_rate=config["dataset"].get("target_sampling_rate", 16000)  # Thêm tham số này
@@ -244,7 +244,7 @@ class ASRTask():
             state_dict = checkpoint
         
         # Gọi model selective load (nhưng cho resume, có thể load full bằng cách comment selective ở model.py)
-        optimizer_state, lr_scheduler_state, saved_epoch = self.model.load_checkpoint(checkpoint_path)  # Sử dụng model method
+        optimizer_state, lr_scheduler_state, saved_epoch = self.model.load_checkpoint(checkpoint_path, resume_mode = self.resume_mode)  # Sử dụng model method
         
         # Load optimizer/lr_scheduler nếu có
         if optimizer_state and self.optimizer:
@@ -255,7 +255,7 @@ class ASRTask():
             self.epoch = int(saved_epoch)
         
         self.model.to(self.device)
-        logger.success(f"Loaded full checkpoint from: {checkpoint_path} (model selective + optimizer/lr/epoch)")
+        logger.success(f"Loaded full checkpoint from: {checkpoint_path} with mode: {self.resume_mode}")
 
     def run_train(self):
 
@@ -287,8 +287,8 @@ class ASRTask():
         pretrained_path = self.config["train"].get("pretrained_path")
         if pretrained_path:
             # Cho pretrained: Chỉ load model (không optimizer/epoch, vì initial)
-            self.model.load_checkpoint(pretrained_path)
-            logger.success(f"Loaded pretrained encoder from: {pretrained_path}")
+            self.model.load_checkpoint(pretrained_path,resume_mode = self.resume_mode)
+            logger.success(f"Loaded pretrained encoder from: {pretrained_path} with mode: {self.resume_mode}")
 
         # THAY ĐỔI CHÍNH Ở ĐÂY: Load dataset từ HuggingFace thay vì file meta
         dataset_config = self.config["dataset"]
