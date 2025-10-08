@@ -275,6 +275,22 @@ class ASRTask():
         logger.success(f"Loaded full checkpoint from: {checkpoint_path} with mode: {self.resume_mode}")
 
     def run_train(self):
+        if self.config["train"].get("debug_lr", False):
+            logger.info("=" * 60)
+            logger.info("LR SCHEDULE DEBUG")
+            logger.info("=" * 60)
+            
+            dummy_optimizer = AdamW([torch.nn.Parameter(torch.randn(1))], lr=self.config["train"]["lr"])
+            dummy_scheduler = WarmupLR(dummy_optimizer, warmup_steps=self.config["train"]["warmup_steps"])
+            
+            steps_to_check = [1, 100, 500, 1000, 2000, 5000, 10000, 20000]
+            for step in steps_to_check:
+                for _ in range(step - dummy_scheduler.last_epoch - 1):
+                    dummy_scheduler.step()
+                lr = dummy_scheduler.get_lr()[0]
+                logger.info(f"Step {step:5d}: LR = {lr:.8f}")
+            
+            exit()  # Exit after debug
         logger.info("="*40)
         logger.info(f"START TRAINING ASR MODEL")
         logger.info("="*40)

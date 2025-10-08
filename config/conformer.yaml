@@ -66,7 +66,8 @@ train:
   # ===== CRITICAL: PHASE 1 SETTINGS =====
   freeze_encoder: true             # ← KEY: Freeze encoder
   resume_mode: "selective"         # ← Load encoder từ pretrained English
-  
+  debug_lr: true
+  debug freeze: true               # ← DEBUG: In trạng thái freeze
   num_epoch: 15                    # ← Phase 1: 15 epochs
   
   # ===== LR SETTINGS (WarmupLR) =====
