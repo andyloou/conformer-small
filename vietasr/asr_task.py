@@ -109,9 +109,23 @@ class ASRTask():
                 retval = self.model(mel_feats, mel_lens, targets, target_lens)
                 loss = retval["loss"]
             
-            if torch.isnan(loss):
-                self.optimizer.zero_grad()
-                continue
+            if torch.isnan(loss) or torch.isinf(loss):
+                logger.error(f"NaN/Inf loss at epoch {self.epoch}, batch {i+1}!")
+                logger.error(f"├─ Loss: {loss.item()}")
+                logger.error(f"├─ CTC loss: {retval['ctc_loss'].item()}")
+                logger.error(f"└─ Gradient norm: {total_norm:.2f}")
+                
+                # Save crash checkpoint
+                crash_path = f"{self.output_dir}/crash_epoch_{self.epoch}_batch_{i+1}.pt"
+                torch.save({
+                    "model": self.model.state_dict(),
+                    "optimizer": self.optimizer.state_dict(),
+                    "epoch": self.epoch,
+                    "batch": i+1,
+                }, crash_path)
+                logger.error(f"Saved crash checkpoint to {crash_path}")
+                
+                raise ValueError("Training unstable - NaN/Inf loss detected. Check LR and gradients.")
             
             loss = loss / self.acc_steps
             
@@ -119,7 +133,7 @@ class ASRTask():
             if self.use_amp:
                 scaler.scale(loss).backward()
                 scaler.unscale_(self.optimizer)  # Unscale trước clip
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
+                total_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
                 scaler.step(self.optimizer)
                 scaler.update()
                 if (i + 1) % self.acc_steps == 0:
@@ -128,7 +142,7 @@ class ASRTask():
                     self.optimizer.zero_grad()
             else:
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
+                total_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
                 if (i + 1) % self.acc_steps == 0:
                     self.optimizer.step()
                     if self.lr_scheduler is not None:
@@ -143,6 +157,8 @@ class ASRTask():
             decoder_loss_epoch += decoder_loss
             
             if (i + 1) % 100 == 0:
+                if total_norm > 10.0:
+                    logger.warning(f"Large gradient norm: {total_norm:.2f} at batch {i+1}")
                 logger.info(f"[TRAIN] EPOCH {self.epoch} | BATCH {i+1} | loss={train_loss} | ctc_loss={ctc_loss} | decoder_loss={decoder_loss}")
                 predicts = self.model.get_predicts(retval["encoder_out"], retval["encoder_out_lens"])
                 labels = self.model.get_labels(targets, target_lens)
@@ -155,7 +171,8 @@ class ASRTask():
                             "ctc_loss": ctc_loss,
                             "decoder_loss": decoder_loss
                         },
-                        "step": (self.epoch - 1)  + i + 1
+                        "train/grad_norm": total_norm.item(),
+                        "step": (self.epoch - 1) * len(dataloader) + i + 1
                     }
                 )
 
@@ -258,7 +275,6 @@ class ASRTask():
         logger.success(f"Loaded full checkpoint from: {checkpoint_path} with mode: {self.resume_mode}")
 
     def run_train(self):
-
         logger.info("="*40)
         logger.info(f"START TRAINING ASR MODEL")
         logger.info("="*40)
@@ -271,31 +287,99 @@ class ASRTask():
         self.epoch = 0
         self.valid_loss_best = 1000000
 
-        self.optimizer = AdamW(
-            self.model.parameters(),
-            lr=self.config["train"].get("lr", 1e-4),
-            weight_decay=self.config["train"].get("weight_decay")
-        )
+        # ===== THAY ĐỔI 1: Di chuyển model.to(device) LÊN TRƯỚC =====
+        self.model.to(self.device)
+        self.preprocessor.to(self.device)
+        
+        # ===== THAY ĐỔI 2: Load pretrained TRƯỚC KHI setup optimizer =====
+        pretrained_path = self.config["train"].get("pretrained_path")
+        if pretrained_path:
+            self.model.load_checkpoint(pretrained_path, resume_mode=self.resume_mode)
+            logger.success(f"Loaded pretrained from: {pretrained_path} with mode: {self.resume_mode}")
+            
+            # ===== THAY ĐỔI 3: FREEZE ENCODER nếu config yêu cầu =====
+            if self.config["train"].get("freeze_encoder", False):
+                frozen_params = 0
+                trainable_params = 0
+                
+                for name, param in self.model.named_parameters():
+                    if 'encoder' in name:
+                        param.requires_grad = False
+                        frozen_params += param.numel()
+                    else:
+                        param.requires_grad = True
+                        trainable_params += param.numel()
+                
+                logger.warning("=" * 60)
+                logger.warning("PHASE 1: ENCODER FROZEN - Training decoder only")
+                logger.warning("=" * 60)
+                logger.info(f"├─ Frozen params: {frozen_params:,}")
+                logger.info(f"└─ Trainable params: {trainable_params:,}")
+        
+        # ===== THAY ĐỔI 4: Setup optimizer với differential LR =====
+        freeze_encoder = self.config["train"].get("freeze_encoder", False)
+        
+        if freeze_encoder:
+            # Phase 1: Single LR cho decoder only
+            trainable_params = [p for p in self.model.parameters() if p.requires_grad]
+            self.optimizer = AdamW(
+                trainable_params,
+                lr=self.config["train"].get("lr", 1e-4),
+                weight_decay=self.config["train"].get("weight_decay", 1e-6)
+            )
+            logger.info(f"Optimizer: Single LR = {self.config['train']['lr']}")
+        else:
+            # Phase 2: Differential LR cho encoder vs decoder
+            encoder_lr = self.config["train"].get("encoder_lr", 5e-6)
+            decoder_lr = self.config["train"].get("decoder_lr", 1e-4)
+            other_lr = self.config["train"].get("other_lr", 5e-5)
+            
+            encoder_params = []
+            decoder_params = []
+            other_params = []
+            
+            for name, param in self.model.named_parameters():
+                if not param.requires_grad:
+                    continue
+                if 'encoder' in name:
+                    encoder_params.append(param)
+                elif 'decoder' in name:
+                    decoder_params.append(param)
+                else:
+                    other_params.append(param)
+            
+            self.optimizer = AdamW([
+                {'params': encoder_params, 'lr': encoder_lr, 'weight_decay': 1e-6},
+                {'params': decoder_params, 'lr': decoder_lr, 'weight_decay': 1e-5},
+                {'params': other_params, 'lr': other_lr, 'weight_decay': 0},
+            ])
+            
+            logger.warning("=" * 60)
+            logger.warning("PHASE 2: DIFFERENTIAL LR - Full model training")
+            logger.warning("=" * 60)
+            logger.info(f"├─ Encoder LR: {encoder_lr}")
+            logger.info(f"├─ Decoder LR: {decoder_lr}")
+            logger.info(f"└─ Other LR: {other_lr}")
+        if self.config["train"].get("debug_freeze", False):
+            logger.info("=" * 60)
+            logger.info("FROZEN PARAMETERS CHECK")
+            logger.info("=" * 60)
+            
+            for name, param in self.model.named_parameters():
+                status = "FROZEN" if not param.requires_grad else "TRAINABLE"
+                logger.info(f"{status:10s} | {name:50s} | shape={list(param.shape)}")
+            
+            exit()
+        # Setup LR scheduler
         self.lr_scheduler = WarmupLR(
             self.optimizer,
             warmup_steps=self.config["train"].get("warmup_steps", 25000)
         )
 
-        self.model.to(self.device)
-        self.preprocessor.to(self.device)
-    
-        pretrained_path = self.config["train"].get("pretrained_path")
-        if pretrained_path:
-            # Cho pretrained: Chỉ load model (không optimizer/epoch, vì initial)
-            self.model.load_checkpoint(pretrained_path,resume_mode = self.resume_mode)
-            logger.success(f"Loaded pretrained encoder from: {pretrained_path} with mode: {self.resume_mode}")
-
-        # THAY ĐỔI CHÍNH Ở ĐÂY: Load dataset từ HuggingFace thay vì file meta
+        # Load dataset
         dataset_config = self.config["dataset"]
         
-        # Kiểm tra xem có dùng HuggingFace dataset hay file meta
         if dataset_config.get("use_huggingface", False):
-            # Load từ HuggingFace
             dataset_name = dataset_config.get("dataset_name", "linhtran92/viet_bud500")
             max_duration = dataset_config.get("max_duration", 20.0)
             
@@ -311,7 +395,6 @@ class ASRTask():
                 max_duration=max_duration
             )
         else:
-            # Load từ file meta (cách cũ)
             logger.info("Loading dataset from meta files")
             self.train_dataset = ASRDataset(meta_filepath=dataset_config["train_filepath"])
             self.valid_dataset = ASRDataset(meta_filepath=dataset_config["valid_filepath"])
@@ -322,13 +405,20 @@ class ASRTask():
         self.init_wandb()
         
         valid_loss_best = self.valid_loss_best
-        valid_acc_best = 0
 
+        # ===== THAY ĐỔI 5: Thêm gradient monitoring =====
         for epoch in range(self.epoch or 0, self.num_epoch):
             self.epoch = epoch + 1
             logger.info(f"[TRAIN] EPOCH {epoch + 1}/{self.num_epoch} START")
+            
+            # Log LR hiện tại
+            current_lr = self.optimizer.param_groups[0]['lr']
+            logger.info(f"Current Learning Rate: {current_lr:.8f}")
+            
             train_stats = self.train_one_epoch()
             logger.success(f"[TRAIN] STATS: {train_stats}")
+            
+            # Save checkpoints
             torch.save(
                 {
                     "model": self.model.state_dict(),
@@ -340,19 +430,27 @@ class ASRTask():
                 f"{self.output_dir}/checkpoint.pt")
             torch.save({"model": self.model.state_dict()}, f"{self.output_dir}/epoch_{self.epoch}.pt")
                 
-            logger.info(f"[TRAIN] EPOCH {epoch + 1}/{self.num_epoch} DONE, Save checkpoint to: {self.output_dir}/checkpoint_epoch_{self.epoch}.pt")
+            logger.info(f"[TRAIN] EPOCH {epoch + 1}/{self.num_epoch} DONE")
 
             logger.info(f"[VALID] EPOCH {epoch + 1}/{self.num_epoch} START")
             valid_stats = self.valid_one_epoch()
             logger.success(f"[VALID] STATS: {valid_stats}")
             valid_loss = valid_stats["valid_loss"]
+            valid_wer = valid_stats["valid_wer"]
 
             if valid_loss < valid_loss_best:
                 valid_loss_best = valid_loss
                 torch.save({"model": self.model.state_dict()}, f"{self.output_dir}/valid_loss_best.pt")
-                logger.success(f"saved best model to {self.output_dir}/valid_loss_best.pt")
+                logger.success(f"Saved best model to {self.output_dir}/valid_loss_best.pt")
 
             logger.info(f"[VALID] EPOCH {epoch + 1}/{self.num_epoch} DONE")
+
+            # ===== THAY ĐỔI 6: Check Phase 1 completion =====
+            if freeze_encoder and valid_wer < 50.0:
+                logger.success("=" * 60)
+                logger.success(f"PHASE 1 COMPLETE: Valid WER = {valid_wer:.2f}% < 50%")
+                logger.success("Consider starting PHASE 2 with unfreeze_encoder")
+                logger.success("=" * 60)
 
             wandb.log({"train": train_stats, "valid": valid_stats, "epoch": self.epoch}, commit=True)
 

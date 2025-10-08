@@ -18,7 +18,14 @@ model:
     ffn_mult: 4
     pre_norm: True
   ctc_weight: 1.0
-  ctc_linear_dropout: 0.1 
+  ctc_linear_dropout: 0.1
+  
+  # ===== TĂNG DATA AUGMENTATION =====
+  freq_masks: 3                    # ← Tăng từ 2
+  time_masks: 10                   # ← Tăng từ 5
+  freq_width: 30                   # ← Tăng từ 27
+  time_width: 0.1                  # ← Tăng từ 0.05
+  
   decoder_params:
     n_layers: 1
     d_model: 176
@@ -26,9 +33,9 @@ model:
     dropout: 0.1
     pre_norm: True
   label_smoothing_weight: 0.0
-  label_smoothing_normalize_length: false 
+  label_smoothing_normalize_length: false
 
-preprocessor:  # Giữ nguyên
+preprocessor:
   sample_rate: 16000
   normalize: per_feature
   window_size: 0.025
@@ -43,40 +50,73 @@ preprocessor:  # Giữ nguyên
   pad_value: 0.0
 
 dataset:
-  # ========== THAY ĐỔI CHÍNH Ở ĐÂY ==========
-  use_huggingface: true                      
-  dataset_name: "linhtran92/viet_bud500"    
-  max_duration: 15.0                        
-  target_sampling_rate: 16000                
+  use_huggingface: true
+  dataset_name: "linhtran92/viet_bud500"
+  max_duration: 15.0
+  target_sampling_rate: 16000
   
-  # BPE model path
   bpe_model_path: data/bpe_2000/bpe.model
-
-  batch_size: 64                         
-  num_worker: 12                             
+  
+  batch_size: 32                   # ← Giảm từ 64 (stability)
+  num_worker: 12
 
 train:
-  output_dir: exps/bud500/conformer        
-  num_epoch: 30                              
-
-  warmup_steps: 5000                       
+  output_dir: exps/bud500/conformer_phase1
   
-  lr: 0.001                                   
-  weight_decay: !!float 1e-6                            
-  acc_steps: 1                              
+  # ===== CRITICAL: PHASE 1 SETTINGS =====
+  freeze_encoder: true             # ← KEY: Freeze encoder
+  resume_mode: "selective"         # ← Load encoder từ pretrained English
   
-  #Mixed precision (AMP) 
-  use_amp: true                              
-
-  pretrained_path: /home/andyloou/conformer-small/vietasr/model_weights.pth           
-  resume_mode:  full
+  num_epoch: 15                    # ← Phase 1: 15 epochs
+  
+  # ===== LR SETTINGS (WarmupLR) =====
+  lr: 0.0005                       # ← Base LR (peak sau warmup)
+  warmup_steps: 2000               # ← Giảm mạnh từ 10000
+  weight_decay: 1.0e-5             # ← Regularization
+  
+  acc_steps: 4                     # ← Giảm từ 8 (update thường hơn)
+  
+  # ===== MIXED PRECISION =====
+  use_amp: false                   # ← TẮT trong phase 1 (debug dễ hơn)
+  
+  # ===== PRETRAINED PATH =====
+  pretrained_path: /home/andyloou/conformer-small/vietasr/model_weights.pth
+  
   wandb_config:
-    project: bud500-asr                      
-    tag: conformer-bud500-baseline           
+    project: bud500-asr-phase1
+    tag: conformer-freeze-encoder-v2
 
+# train:
+#   output_dir: exps/bud500/conformer_phase2
+  
+#   # ===== CRITICAL: PHASE 2 SETTINGS =====
+#   freeze_encoder: false            # ← UNFREEZE encoder
+#   resume_mode: "full"              # ← Load cả encoder + decoder từ phase 1
+  
+#   num_epoch: 50                    # ← Phase 2: 50 epochs
+  
+#   # ===== DIFFERENTIAL LR =====
+#   encoder_lr: 5.0e-6               # ← Encoder pretrained: LR rất nhỏ
+#   decoder_lr: 1.0e-4               # ← Decoder: LR vừa phải
+#   other_lr: 5.0e-5                 # ← Spec_aug, batch_norm
+  
+#   warmup_steps: 5000               # ← Tăng lại warmup
+#   weight_decay: 1.0e-6
+  
+#   acc_steps: 8                     # ← Tăng lại
+  
+#   # ===== MIXED PRECISION =====
+#   use_amp: true                    # ← BẬT lại AMP (decoder đã stable)
+  
+#   # ===== RESUME FROM PHASE 1 =====
+#   pretrained_path: exps/bud500/conformer_phase1/valid_loss_best.pt
+  
+#   wandb_config:
+#     project: bud500-asr-phase2
+#     tag: conformer-unfreeze-encoder-v2
 decode:
-  beam_size: 1                                # Giữ greedy (nhẹ); tăng 5 nếu test với LM
-  kenlm_path: null                           
-  word_vocab_path: data/word_vocab.txt       
+  beam_size: 1
+  kenlm_path: null
+  word_vocab_path: data/word_vocab.txt
   kenlm_alpha: 0.5
   kenlm_beta: 1.5
