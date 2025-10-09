@@ -55,7 +55,7 @@ dataset:
   max_duration: 15.0
   target_sampling_rate: 16000
   
-  bpe_model_path: data/bpe_2000/bpe.model
+  bpe_model_path: data/bpe_4000/bpe.model
   
   batch_size: 32                   # ← Giảm từ 64 (stability)
   num_worker: 12
@@ -116,8 +116,8 @@ train:
 #     project: bud500-asr-phase2
 #     tag: conformer-unfreeze-encoder-v2
 decode:
-  beam_size: 1
-  kenlm_path: null
+  beam_size: 6
+  kenlm_path: data/lm-5gram-0,0,0,1.binary
   word_vocab_path: data/word_vocab.txt
-  kenlm_alpha: 0.5
-  kenlm_beta: 1.5
+  kenlm_alpha: 0.7
+  kenlm_beta: 1.0
