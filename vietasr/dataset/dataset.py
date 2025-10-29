@@ -12,26 +12,25 @@ from datasets import load_dataset, Audio
 from torch.utils.data import IterableDataset
 
 class ASRDataset(IterableDataset):
-    def __init__(self, dataset_name="linhtran92/viet_bud500", split="train", max_duration=12.0):
-        self.dataset_name = dataset_name
-        self.split = split
+    def __init__(self, dataset_name=None, split="train", max_duration=12.0, hf_dataset = None):
         self.max_duration = max_duration
+        if hf_dataset is not None:
+            self.dataset = hf_dataset.cast_column("audio",Audio(decode=False))
+        else:
+            self.dataset = load_dataset(dataset_name, split=split)
+            self.dataset = self.dataset.cast_column("audio",Audio(decode=False))
 
     def __iter__(self):
-        hf_dataset = load_dataset(self.dataset_name, split=self.split)
-        hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
 
-        for sample in hf_dataset:
+        for sample in self.dataset:
             audio_info = sample["audio"]
             audio_path = audio_info.get("path", None)
             audio_bytes = audio_info.get("bytes", None)
             text = sample["transcription"]
 
             if audio_path is not None:
-                # load từ file path
                 waveform, sample_rate = torchaudio.load(audio_path)
             elif audio_bytes is not None:
-                # load từ memory buffer
                 buffer = io.BytesIO(audio_bytes)
                 waveform, sample_rate = torchaudio.load(buffer)
             else:

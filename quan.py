@@ -123,24 +123,35 @@ class MelSpecDataReader(CalibraterBase):
             print(f"Prepared {len(self.dataset)} samples for calibration.")
             self.audio_files = None  # Không dùng file paths
         else:
-            # Load từ local files (code cũ)
-            print(f"Scanning LOCAL dataset at: {dataset_path}")
-            self.audio_files = sorted(glob.glob(os.path.join(dataset_path, "**", "*.flac"), recursive=True))
-            
-            if not self.audio_files:
-                print("No .flac files found, searching for .wav files...")
-                self.audio_files = sorted(glob.glob(os.path.join(dataset_path, "**", "*.wav"), recursive=True))
-            
-            if not self.audio_files:
-                raise FileNotFoundError(f"No .flac or .wav files found in {dataset_path}")
+            # Load local dataset đã save_to_disk
+            from datasets import load_from_disk
 
-            if max_samples > 0 and len(self.audio_files) > max_samples:
-                print(f"Limiting calibration to {max_samples} random samples.")
-                indices = np.random.choice(len(self.audio_files), max_samples, replace=False)
-                self.audio_files = [self.audio_files[i] for i in indices]
-            
-            print(f"Found {len(self.audio_files)} files for calibration.")
-            self.dataset = None
+            print(f"Loading local dataset from: {dataset_path}")
+            ds = load_from_disk(dataset_path)
+
+            # Chọn split (train / validation / test)
+            if split not in ds:
+                raise ValueError(f"Split '{split}' không tồn tại trong dataset. Splits có: {list(ds.keys())}")
+
+            self.dataset = ds[split]
+
+            # Filter duration
+            if max_duration:
+                print(f"Filtering audios <= {max_duration}s")
+                def filter_fn(example):
+                    dur = len(example['audio']['array']) / example['audio']['sampling_rate']
+                    return dur <= max_duration
+                self.dataset = self.dataset.filter(filter_fn)
+
+            # Giới hạn số samples
+            total = len(self.dataset)
+            if max_samples > 0 and total > max_samples:
+                import numpy as np
+                idx = np.random.choice(total, max_samples, replace=False)
+                self.dataset = self.dataset.select(idx)
+
+            print(f"Prepared {len(self.dataset)} samples for calibration (local).")
+            self.audio_files = None
 
         self.input_name = input_name
         self.length_name = length_name
@@ -247,6 +258,7 @@ def quantize_quartznet_model(model_path, output_path, dataset_name, max_samples=
             '/encoder/layers.0/conv/Mul',
             '/encoder/layers.0/conv/Mul_output_0',
             # ĐÃ CÓ: Softmax (Attention)
+
             '/encoder/layers.0/self_attn/Softmax',
             '/encoder/layers.0/self_attn/Softmax_output_0',
             # ĐÃ CÓ: Swish (FFN 1)
@@ -850,7 +862,7 @@ def quantize_quartznet_model(model_path, output_path, dataset_name, max_samples=
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Quantize a combined Conformer CTC ONNX model using Hugging Face dataset.")
     parser.add_argument('--model', required=True, help='Path to the combined float ONNX model (encoder + decoder)')
-    parser.add_argument('--output', required=True, help='Path to save the quantized ONNX model')
+    parser.add_argument('--output',default= "quan_conformer", help='Path to save the quantized ONNX model')
     # <<< THAY ĐỔI: Đổi tên đối số thành dataset_name >>>
     #parser.add_argument('--dataset_name', required=True, help='Hugging Face dataset name (e.g., linhtran92/viet_bud500)')
     parser.add_argument('--dataset_name',required= True,help = "Path to local dataset")

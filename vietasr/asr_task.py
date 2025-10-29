@@ -430,9 +430,18 @@ class ASRTask():
                 max_duration=max_duration
             )
         else:
-            logger.info("Loading dataset from meta files")
-            self.train_dataset = ASRDataset(meta_filepath=dataset_config["train_filepath"])
-            self.valid_dataset = ASRDataset(meta_filepath=dataset_config["valid_filepath"])
+            logger.info("Loading dataset from local dataset saved by save_to_disk")
+            from datasets import load_from_disk
+
+            # load root folder only once
+            dataset_root = dataset_config["train_filepath"].replace("/train", "")
+            local_ds = load_from_disk(dataset_root)
+
+            self.train_dataset = ASRDataset(hf_dataset=local_ds["train"],
+                                            max_duration=dataset_config.get("max_duration", 10.0))
+            self.valid_dataset = ASRDataset(hf_dataset=local_ds["validation"],
+                                            max_duration=dataset_config.get("max_duration", 10.0))
+
 
         os.makedirs(self.output_dir, exist_ok=True)
         save_config(self.config, os.path.join(self.output_dir, "config.yaml"))
@@ -507,7 +516,7 @@ class ASRTask():
         
         batch_size = self.config["dataset"]["batch_size"]
         num_worker = self.config["dataset"]["num_worker"]
-        
+        dataset_config = self.config["dataset"]
         if use_huggingface:
             if dataset_name is None:
                 dataset_name = self.config["dataset"].get("dataset_name", "linhtran92/viet_bud500")
@@ -519,8 +528,14 @@ class ASRTask():
                 max_duration=max_duration
             )
         else:
+            from datasets import load_from_disk
+
+            # load root folder only once
+            dataset_root = dataset_config["train_filepath"].replace("/train", "")
+            local_ds = load_from_disk(dataset_root)
             logger.info(f"Loading test set from meta file: {test_meta_filepath}")
-            test_dataset = ASRDataset(meta_filepath=test_meta_filepath)
+            test_dataset = ASRDataset(hf_dataset=local_ds["test"],
+                                            max_duration=dataset_config.get("max_duration", 10.0))
         
         dataloader = DataLoader(
             dataset=test_dataset,

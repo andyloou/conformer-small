@@ -10,7 +10,7 @@ from vietasr.model import AudioToMelSpectrogramPreprocessor
 from vietasr.utils.utils import calculate_wer
 from utils import load_config
 from vietasr.model import ConformerCTC
-
+from datasets import load_from_disk
 def test_onnx_model(
     onnx_path: str,
     config_path: str,
@@ -18,7 +18,8 @@ def test_onnx_model(
     test_meta_filepath: str = None,
     use_huggingface: bool = True,
     dataset_name: str = "linhtran92/viet_bud500",
-    device: str = "cuda"
+    device: str = "cuda",
+    local_dataset_path = None
 ):
     """Test ONNX model và (tùy chọn) so sánh với PyTorch"""
     
@@ -62,10 +63,16 @@ def test_onnx_model(
             split="test",
             max_duration=config["dataset"].get("max_duration", 20.0)
         )
+
     else:
-        logger.info(f"Loading test set from: {test_meta_filepath}")
-        test_dataset = ASRDataset(meta_filepath=test_meta_filepath)
-    
+        if local_dataset_path is None:
+            local_dataset_path = config["dataset"]["local_dataset_path"]
+        
+        logger.info(f"Loading local dataset from: {local_dataset_path}")
+        local_ds = load_from_disk(local_dataset_path)
+
+        test_split = local_ds["test"]
+        test_dataset = ASRDataset(hf_dataset=test_split)
     dataloader = DataLoader(
         dataset=test_dataset,
         batch_size=1,
@@ -73,6 +80,7 @@ def test_onnx_model(
         shuffle=False,
         collate_fn=collator
     )
+
     
     # Load ONNX model
     logger.info(f"Loading ONNX model: {onnx_path}")
@@ -191,18 +199,18 @@ def ctc_greedy_decode(log_probs, blank_id):
 if __name__ == "__main__":
     # Đường dẫn
     ONNX_PATH = "conformer_vie.onnx"
-    CONFIG_PATH = "/home/andyloou/bud500/viet-asr/config/phase2.yaml"
+    CONFIG_PATH = "config/phase2.yaml"
     
     # Đặt đường dẫn checkpoint PyTorch của bạn ở đây để so sánh
     # Đặt là None nếu chỉ muốn test ONNX
-    PT_CHECKPOINT_PATH = "/home/andyloou/bud500/viet-asr/checkpoints/epoch_37.pt" # Sửa lại đường dẫn này
+    PT_CHECKPOINT_PATH = "exps/bud500/conformer_phase2/epoch_37.pt" # Sửa lại đường dẫn này
     
     # Test với HuggingFace dataset
     test_onnx_model(
         onnx_path=ONNX_PATH,
         config_path=CONFIG_PATH,
         pt_checkpoint_path=PT_CHECKPOINT_PATH,
-        use_huggingface=True,
-        dataset_name="linhtran92/viet_bud500",
-        device="cuda"
+        use_huggingface=False,
+        device="mps",
+        local_dataset_path= "viet_bud500_processed"
     )

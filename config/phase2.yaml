@@ -1,3 +1,4 @@
+#gSJNysTR6jtB
 model:
   features_extractor_params:
     global_cmvn_path: null
@@ -49,12 +50,14 @@ preprocessor:
   pad_value: 0.0
 
 dataset:
-  use_huggingface: true
-  dataset_name: "linhtran92/viet_bud500"
+  use_huggingface: false
+  train_filepath : viet_bud500_processed/train
+  test_filepath : viet_bud500_processed/test 
+  validation_filepath: viet_bud500_processed/validation
   max_duration: 15.0
   target_sampling_rate: 16000
   
-  bpe_model_path: /home/andyloou/bud500/viet-asr/data/bpe_4000/bpe.model
+  bpe_model_path: data/bpe_4000/bpe.model
   
   batch_size: 64                  # ← Giảm từ 64 (stability)
   num_worker: 12
