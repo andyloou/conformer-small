@@ -34,7 +34,7 @@ class ASRTask():
         self.device = torch.device(device)
         preproc_cfg = config.get("preprocessor", {})
         self.preprocessor = AudioToMelSpectrogramPreprocessor(**preproc_cfg)
-
+        self.preprocessor.to(self.device)
         self.config = config
         self.use_amp = self.config["train"].get("use_amp", False)
         self.model = model
@@ -172,7 +172,7 @@ class ASRTask():
                             "decoder_loss": decoder_loss
                         },
                         "train/grad_norm": total_norm.item(),
-                        "step": (self.epoch - 1) * len(dataloader) + i + 1
+                        "step": batch_count
                     }
                 )
 
@@ -273,22 +273,38 @@ class ASRTask():
         
         self.model.to(self.device)
         logger.success(f"Loaded full checkpoint from: {checkpoint_path} with mode: {self.resume_mode}")
-
-    def run_train(self):
+    def run_train(self):    
         if self.config["train"].get("debug_lr", False):
-            logger.info("=" * 60)
-            logger.info("LR SCHEDULE DEBUG")
-            logger.info("=" * 60)
-            
-            dummy_optimizer = AdamW([torch.nn.Parameter(torch.randn(1))], lr=self.config["train"]["lr"])
-            dummy_scheduler = WarmupLR(dummy_optimizer, warmup_steps=self.config["train"]["warmup_steps"])
-            
-            steps_to_check = [1, 100, 500, 1000, 2000, 5000, 10000, 20000]
-            for step in steps_to_check:
+            logger.critical("=" * 60)
+            logger.critical("LR SCHEDULE PREVIEW (NoamLR with differential LR)")
+            logger.critical("=" * 60)
+    
+            # 🔹 Tạo dummy optimizer với 3 nhóm LR khác nhau
+            dummy_optimizer = torch.optim.Adam(
+                [
+                    {"params": [torch.nn.Parameter(torch.randn(1))], "lr": self.config["train"]["encoder_lr"]},
+                    {"params": [torch.nn.Parameter(torch.randn(1))], "lr": self.config["train"]["decoder_lr"]},
+                    {"params": [torch.nn.Parameter(torch.randn(1))], "lr": self.config["train"]["other_lr"]},
+                ]
+            )
+
+            dummy_scheduler = WarmupLR(
+                dummy_optimizer,
+                warmup_steps=self.config["train"].get("warmup_steps", 25000),
+                d_model=self.config["model"].get("encoder_dim", 256),
+            )
+    
+            test_steps = [1, 100, 500, 1000, 2000, 3000, 5000, 10000]
+            for step in test_steps:
                 for _ in range(step - dummy_scheduler.last_epoch - 1):
                     dummy_scheduler.step()
-                lr = dummy_scheduler.get_lr()[0]
-                logger.info(f"Step {step:5d}: LR = {lr:.8f}")
+        
+                lrs = dummy_scheduler.get_lr()
+                logger.info(
+                    f"Step {step:5d}: encoder={lrs[0]:.8f}, decoder={lrs[1]:.8f}, other={lrs[2]:.8f}"
+                )
+    
+            logger.critical("=" * 60)   
             
             exit()  # Exit after debug
         logger.info("="*40)
@@ -346,9 +362,9 @@ class ASRTask():
             logger.info(f"Optimizer: Single LR = {self.config['train']['lr']}")
         else:
             # Phase 2: Differential LR cho encoder vs decoder
-            encoder_lr = self.config["train"].get("encoder_lr", 5e-6)
-            decoder_lr = self.config["train"].get("decoder_lr", 1e-4)
-            other_lr = self.config["train"].get("other_lr", 5e-5)
+            encoder_lr = self.config["train"].get("encoder_lr", 0.5)
+            decoder_lr = self.config["train"].get("decoder_lr", 2.0)
+            other_lr = self.config["train"].get("other_lr", 1.0)
             
             encoder_params = []
             decoder_params = []
@@ -387,9 +403,12 @@ class ASRTask():
             
             exit()
         # Setup LR scheduler
+        d_model = self.config["model"]["encoder_params"]["d_model"]
+        warmup_steps = self.config["train"]["warmup_steps"]
         self.lr_scheduler = WarmupLR(
             self.optimizer,
-            warmup_steps=self.config["train"].get("warmup_steps", 25000)
+            warmup_steps= warmup_steps,
+            d_model = d_model
         )
 
         # Load dataset
@@ -578,8 +597,9 @@ class ASRTask():
         word_vocab_path: str=None,
         kenlm_alpha: float=None,
         kenlm_beta: float=None,
-        beam_size: int=2,
+        beam_size: int=None,  # Thay đổi: default=None để đọc config
     ):
+        # Đọc các tham số từ config nếu không được cung cấp
         if not kenlm_path:
             kenlm_path = self.config["decode"].get("kenlm_path")
         if not word_vocab_path:
@@ -588,25 +608,29 @@ class ASRTask():
             kenlm_alpha = self.config["decode"].get("kenlm_alpha")
         if not kenlm_beta:
             kenlm_beta = self.config["decode"].get("kenlm_beta")
-        if not beam_size:
-            beam_size = self.config["decode"].get("beam_size")
-
-        if beam_size > 1 and not kenlm_path:
-            logger.error(f"must pass --kenlm_path (or set in config file) for language model, if beamsize > 1")
-            exit()
+        if beam_size is None: # Sửa: Dùng 'is None' để đọc config chính xác
+            beam_size = self.config["decode"].get("beam_size", 1)
 
         self.beam_size = beam_size
+        self.ctc_decoder = None # Khởi tạo là None
 
-        from pyctcdecode import build_ctcdecoder
-
-        self.ctc_decoder = build_ctcdecoder(
-            self.vocab,
-            kenlm_model_path=kenlm_path,
-            unigrams=word_vocab_path,
-            alpha=kenlm_alpha,
-            beta=kenlm_beta
-        )
-        logger.success("Setup ctc decoder done")
+        # Chỉ setup decoder nếu beam_size > 1 và có Language Model
+        if self.beam_size > 1 and kenlm_path:
+            try:
+                from pyctcdecode import build_ctcdecoder
+                self.ctc_decoder = build_ctcdecoder(
+                        labels = self.vocab,
+                        kenlm_model_path = kenlm_path,
+                        unigrams = word_vocab_path,
+                        alpha=kenlm_alpha,
+                        beta =kenlm_beta
+                )
+                logger.success(f"Setup ctc decoder done (Beam size={self.beam_size})")
+            except Exception as e:
+                logger.error(f"Failed to build ctcdecoder: {e}")
+                self.ctc_decoder = None
+        else:
+            logger.info(f"Using greedy decoding (Beam size={self.beam_size})")
 
     def ctc_beamsearch(
             self,
@@ -614,14 +638,15 @@ class ASRTask():
             encoder_out_lens: torch.Tensor,
         )->str:
         
-        encoder_out = encoder_out[:, : encoder_out_lens[0], :]
+        encoder_out = encoder_out[:, :, : encoder_out_lens[0]]
         assert len(encoder_out.shape) == 3, encoder_out.shape
         assert encoder_out.shape[0] == 1, encoder_out.shape
-        assert encoder_out.shape[1] == encoder_out_lens[0]
+        assert encoder_out.shape[2] == encoder_out_lens[0]
 
         with torch.no_grad():
             log_probs = self.model.decoder(encoder_out)  # [1, T, C+1] log-softmax đã có
-            logit = log_probs.detach().cpu().squeeze(0).numpy()
+            log_probs_no_blank = log_probs[:, :, :-1]
+            logit = log_probs_no_blank.detach().cpu().squeeze(0).numpy()
         text = self.ctc_decoder.decode(
             logits=logit,
             beam_width=self.beam_size
