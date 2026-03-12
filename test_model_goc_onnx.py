@@ -34,18 +34,7 @@ def test_onnx_model(
     preprocessor.eval()
     
     # Load PyTorch model (nếu được cung cấp)
-    pt_model = None
-    if pt_checkpoint_path:
-        logger.info(f"Loading PyTorch model for comparison: {pt_checkpoint_path}")
-        try:
-            pt_model = ConformerCTC(vocab_path=config["dataset"]["bpe_model_path"], **config["model"])
-            pt_model.load_checkpoint(pt_checkpoint_path, resume_mode="full")
-            pt_model.to(device)
-            pt_model.eval()
-            logger.success("PyTorch model loaded successfully.")
-        except Exception as e:
-            logger.error(f"Failed to load PyTorch model: {e}")
-            pt_model = None
+
     
     # Setup collator
     collator = ASRCollator(
@@ -121,23 +110,7 @@ def test_onnx_model(
         onnx_predictions.append(pred_text_onnx)
         
         # --- 2. PyTorch Inference (Optional) ---
-        if pt_model:
-            with torch.no_grad():
-                pt_output = pt_model(mel_feats, mel_lens)
-                # Lấy output từ Pytorch model
-                log_probs_pt = pt_output["log_probs"] # [B, T, C]
-                encoded_length_pt = pt_output["encoded_length"] # [B]
-            
-            # So sánh output thô (raw tensors)
-            diff = np.abs(log_probs_onnx[0] - log_probs_pt[0].cpu().numpy()).max()
-            if diff > 1e-3:
-                logger.warning(f"Sample {i}: Large diff={diff:.6f}")
-
-            # --- CẬP NHẬT: Decode PyTorch ---
-            log_probs_pt_np = log_probs_pt[0, :encoded_length_pt[0]].cpu().numpy()
-            pred_ids_pt = ctc_greedy_decode(log_probs_pt_np, blank_id)
-            pred_text_pt = collator.ids2text(pred_ids_pt)
-            pt_predictions.append(pred_text_pt)
+      
 
         # --- 3. Ground truth ---
         targets = batch[2]
@@ -151,8 +124,7 @@ def test_onnx_model(
             logger.info(f"\nSample {i+1}:")
             logger.info(f"  Label : {label_text}")
             logger.info(f"  ONNX  : {pred_text_onnx}")
-            if pt_model:
-                logger.info(f"  Pytorch: {pred_text_pt}")
+
     
     # --- CẬP NHẬT: TÍNH TOÁN VÀ IN KẾT QUẢ ---
     
@@ -170,17 +142,7 @@ def test_onnx_model(
     logger.success("="*60)
     
     # 2. Tính toán và In kết quả PyTorch (nếu có)
-    if pt_model:
-        wer_pt = calculate_wer(pt_predictions, labels, use_cer=False)
-        cer_pt = calculate_wer(pt_predictions, labels, use_cer=True)
-        
-        logger.info("\n" + "="*60)
-        logger.info("PYTORCH MODEL TEST RESULTS")
-        logger.info("="*60)
-        logger.info(f"Test samples: {len(pt_predictions)}")
-        logger.info(f"WER: {wer_pt:.2f}%")
-        logger.info(f"CER: {cer_pt:.2f}%")
-        logger.info("="*60)
+  
 
     # Trả về kết quả của ONNX (hoặc bạn có thể chọn trả về cả 2)
     return wer_onnx, cer_onnx
@@ -203,14 +165,12 @@ if __name__ == "__main__":
     
     # Đặt đường dẫn checkpoint PyTorch của bạn ở đây để so sánh
     # Đặt là None nếu chỉ muốn test ONNX
-    PT_CHECKPOINT_PATH = "exps/bud500/conformer_phase2/epoch_37.pt" # Sửa lại đường dẫn này
-    
+  
     # Test với HuggingFace dataset
     test_onnx_model(
         onnx_path=ONNX_PATH,
         config_path=CONFIG_PATH,
-        pt_checkpoint_path=PT_CHECKPOINT_PATH,
         use_huggingface=False,
-        device="mps",
+        device="cuda",
         local_dataset_path= "viet_bud500_processed"
     )

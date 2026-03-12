@@ -1011,9 +1011,9 @@ class ConformerCTC(nn.Module):
             })
 
         return output
-
+    
     def forward_encoder(self, mel_feats, mel_lens):
-        """Chỉ forward đến encoder"""
+        """Chỉ forward đến encoder (export ONNX)"""
         encoded, enc_lens = self.encoder(mel_feats, mel_lens)
         return encoded, enc_lens
 
@@ -1112,8 +1112,8 @@ if __name__ == "__main__":
     
     model = ConformerCTC(vocab_path=VOCAB_PATH)
 
-    checkpoint_path = "exps/bud500/conformer_phase2/epoch_37.pt"
-    output_onnx_path = "conformer_vie.onnx"
+    checkpoint_path = "exps/bud500/vlsp_vivos.pt"
+    output_onnx_path = "conformer_vie_vivos_vlsp.onnx"
     model.load_checkpoint(checkpoint_path, resume_mode="full") 
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

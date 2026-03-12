@@ -9,8 +9,8 @@ from loguru import logger
 import numpy as np
 from utils import load_config, save_config
 from vietasr.dataset.dataset import ASRDataset, ASRCollator
-from vietasr.model import ConformerCTC as ASRModel, AudioToMelSpectrogramPreprocessor
-from vietasr.utils.lr_scheduler import WarmupLR
+from vietasr.model import ConformerCTC as ASRModel, AudioToMelSpectrogramPreprocessor, FilterbankFeatures
+from vietasr.utils.lr_scheduler import NoamLR
 from vietasr.utils.utils import calculate_wer
 import torch.cuda.amp as amp
 
@@ -25,7 +25,6 @@ class ASRTask():
         )
         self.vocab = self.collate_fn.get_vocab()
         model = ASRModel(vocab_size=len(self.vocab), pad_id=self.collate_fn.pad_id, **config["model"])
-
         if output_dir is not None:
             self.output_dir = output_dir
         else:
@@ -87,7 +86,7 @@ class ASRTask():
         self.optimizer.zero_grad()
 
         # THÊM: AMP scaler với device explicit
-        scaler = torch.cuda.amp.GradScaler(init_scale=2.**16, enabled=self.use_amp)
+        scaler = torch.amp.GradScaler(init_scale=2.**16, enabled=self.use_amp)
 
         for i, batch in enumerate(dataloader):
             # Giữ nguyên preprocess: audio to mel
@@ -137,16 +136,20 @@ class ASRTask():
                 scaler.step(self.optimizer)
                 scaler.update()
                 if (i + 1) % self.acc_steps == 0:
-                    if self.lr_scheduler is not None:
-                        self.lr_scheduler.step()
+                    # ReduceLROnPlateau step sau validation, không phải mỗi batch
+                    is_finetuning = self.config["train"].get("is_finetuning", False)
+                    if self.lr_scheduler is not None and not is_finetuning:
+                        self.lr_scheduler.step()  # Chỉ NoamLR mới step mỗi batch
                     self.optimizer.zero_grad()
             else:
                 loss.backward()
                 total_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
                 if (i + 1) % self.acc_steps == 0:
                     self.optimizer.step()
-                    if self.lr_scheduler is not None:
-                        self.lr_scheduler.step()
+                    # ReduceLROnPlateau step sau validation, không phải mỗi batch
+                    is_finetuning = self.config["train"].get("is_finetuning", False)
+                    if self.lr_scheduler is not None and not is_finetuning:
+                        self.lr_scheduler.step()  # Chỉ NoamLR mới step mỗi batch
                     self.optimizer.zero_grad()
 
             train_loss = loss.detach().item()
@@ -274,43 +277,9 @@ class ASRTask():
         self.model.to(self.device)
         logger.success(f"Loaded full checkpoint from: {checkpoint_path} with mode: {self.resume_mode}")
     def run_train(self):    
-        if self.config["train"].get("debug_lr", False):
-            logger.critical("=" * 60)
-            logger.critical("LR SCHEDULE PREVIEW (NoamLR with differential LR)")
-            logger.critical("=" * 60)
-    
-            # 🔹 Tạo dummy optimizer với 3 nhóm LR khác nhau
-            dummy_optimizer = torch.optim.Adam(
-                [
-                    {"params": [torch.nn.Parameter(torch.randn(1))], "lr": self.config["train"]["encoder_lr"]},
-                    {"params": [torch.nn.Parameter(torch.randn(1))], "lr": self.config["train"]["decoder_lr"]},
-                    {"params": [torch.nn.Parameter(torch.randn(1))], "lr": self.config["train"]["other_lr"]},
-                ]
-            )
-
-            dummy_scheduler = WarmupLR(
-                dummy_optimizer,
-                warmup_steps=self.config["train"].get("warmup_steps", 25000),
-                d_model=self.config["model"].get("encoder_dim", 256),
-            )
-    
-            test_steps = [1, 100, 500, 1000, 2000, 3000, 5000, 10000]
-            for step in test_steps:
-                for _ in range(step - dummy_scheduler.last_epoch - 1):
-                    dummy_scheduler.step()
-        
-                lrs = dummy_scheduler.get_lr()
-                logger.info(
-                    f"Step {step:5d}: encoder={lrs[0]:.8f}, decoder={lrs[1]:.8f}, other={lrs[2]:.8f}"
-                )
-    
-            logger.critical("=" * 60)   
-            
-            exit()  # Exit after debug
         logger.info("="*40)
         logger.info(f"START TRAINING ASR MODEL")
         logger.info("="*40)
-        logger.info(f"Config: {self.config}")
 
         self.num_epoch = self.config["train"]["num_epoch"]
         self.acc_steps = self.config["train"]["acc_steps"]
@@ -319,17 +288,22 @@ class ASRTask():
         self.epoch = 0
         self.valid_loss_best = 1000000
 
-        # ===== THAY ĐỔI 1: Di chuyển model.to(device) LÊN TRƯỚC =====
         self.model.to(self.device)
         self.preprocessor.to(self.device)
         
-        # ===== THAY ĐỔI 2: Load pretrained TRƯỚC KHI setup optimizer =====
         pretrained_path = self.config["train"].get("pretrained_path")
         if pretrained_path:
-            self.model.load_checkpoint(pretrained_path, resume_mode=self.resume_mode)
-            logger.success(f"Loaded pretrained from: {pretrained_path} with mode: {self.resume_mode}")
+            optimizer_state, lr_scheduler_state, saved_epoch = self.model.load_checkpoint(pretrained_path, resume_mode=self.resume_mode)
+            resume_optimizer = self.config["train"].get("resume_optimizer", False)
+            if resume_optimizer and optimizer_state and self.optimizer:
+                self._pending_optimizer_state = optimizer_state
+                self._pending_scheduler_state = lr_scheduler_state
+            else:
+                self._pending_optimizer_state = None
+                self._pending_scheduler_state = None
+            # self.model.load_checkpoint(pretrained_path, resume_mode=self.resume_mode)
+            # logger.success(f"Loaded pretrained from: {pretrained_path} with mode: {self.resume_mode}")
             
-            # ===== THAY ĐỔI 3: FREEZE ENCODER nếu config yêu cầu =====
             if self.config["train"].get("freeze_encoder", False):
                 frozen_params = 0
                 trainable_params = 0
@@ -342,34 +316,26 @@ class ASRTask():
                         param.requires_grad = True
                         trainable_params += param.numel()
                 
-                logger.warning("=" * 60)
                 logger.warning("PHASE 1: ENCODER FROZEN - Training decoder only")
-                logger.warning("=" * 60)
                 logger.info(f"├─ Frozen params: {frozen_params:,}")
                 logger.info(f"└─ Trainable params: {trainable_params:,}")
         
-        # ===== THAY ĐỔI 4: Setup optimizer với differential LR =====
-        freeze_encoder = self.config["train"].get("freeze_encoder", False)
-        
-        if freeze_encoder:
-            # Phase 1: Single LR cho decoder only
-            trainable_params = [p for p in self.model.parameters() if p.requires_grad]
-            self.optimizer = AdamW(
-                trainable_params,
-                lr=self.config["train"].get("lr", 1e-4),
-                weight_decay=self.config["train"].get("weight_decay", 1e-6)
-            )
-            logger.info(f"Optimizer: Single LR = {self.config['train']['lr']}")
-        else:
-            # Phase 2: Differential LR cho encoder vs decoder
-            encoder_lr = self.config["train"].get("encoder_lr", 0.5)
-            decoder_lr = self.config["train"].get("decoder_lr", 2.0)
-            other_lr = self.config["train"].get("other_lr", 1.0)
+        # Setup optimizer & scheduler based on mode (Fine-tuning vs. Training)
+        is_finetuning = self.config["train"].get("is_finetuning", False)
+
+        if is_finetuning:
+            logger.info("MODE: FINE-TUNING (Fixed LR, No Scheduler)")
+            
+            for param in self.model.parameters():
+                param.requires_grad = True
+                
+            encoder_lr = self.config["train"].get("ft_encoder_lr", 1e-5)
+            decoder_lr = self.config["train"].get("ft_decoder_lr", 5e-5)
+            other_lr = self.config["train"].get("ft_other_lr", 1e-5)
             
             encoder_params = []
             decoder_params = []
             other_params = []
-            
             for name, param in self.model.named_parameters():
                 if not param.requires_grad:
                     continue
@@ -386,30 +352,76 @@ class ASRTask():
                 {'params': other_params, 'lr': other_lr, 'weight_decay': 0},
             ])
             
-            logger.warning("=" * 60)
-            logger.warning("PHASE 2: DIFFERENTIAL LR - Full model training")
-            logger.warning("=" * 60)
             logger.info(f"├─ Encoder LR: {encoder_lr}")
             logger.info(f"├─ Decoder LR: {decoder_lr}")
             logger.info(f"└─ Other LR: {other_lr}")
-        if self.config["train"].get("debug_freeze", False):
-            logger.info("=" * 60)
-            logger.info("FROZEN PARAMETERS CHECK")
-            logger.info("=" * 60)
+
+            from torch.optim.lr_scheduler import ReduceLROnPlateau
+            scheduler_config = self.config["train"].get("lr_scheduler", {})
+            self.lr_scheduler = ReduceLROnPlateau(
+                self.optimizer,
+                mode="min",
+                factor=scheduler_config.get("factor", 0.5),
+                patience=scheduler_config.get("patience", 3),
+                min_lr=scheduler_config.get("min_lr", 1e-6),
+                threshold= scheduler_config.get("threshold", 0.01),
+            )
+
+
+        else:
+            logger.info("MODE: TRAINING FROM SCRATCH (NoamLR Scheduler)")
+            freeze_encoder = self.config["train"].get("freeze_encoder", False)
             
-            for name, param in self.model.named_parameters():
-                status = "FROZEN" if not param.requires_grad else "TRAINABLE"
-                logger.info(f"{status:10s} | {name:50s} | shape={list(param.shape)}")
-            
-            exit()
-        # Setup LR scheduler
-        d_model = self.config["model"]["encoder_params"]["d_model"]
-        warmup_steps = self.config["train"]["warmup_steps"]
-        self.lr_scheduler = WarmupLR(
-            self.optimizer,
-            warmup_steps= warmup_steps,
-            d_model = d_model
-        )
+            if freeze_encoder:
+                # Phase 1: Use 'lr' as a multiplier (e.g., 1.0 or 2.0)
+                base_multiplier = self.config["train"].get("lr", 2.0) 
+                trainable_params = [p for p in self.model.parameters() if p.requires_grad]
+                self.optimizer = AdamW(
+                    trainable_params,
+                    lr=base_multiplier,
+                    weight_decay=self.config["train"].get("weight_decay", 1e-6)
+                )
+                logger.info(f"Phase 1 (Encoder Frozen): LR Multiplier = {base_multiplier}")
+                
+            else:
+                # Phase 2: Differential LR Multipliers
+                encoder_lr = self.config["train"].get("encoder_lr", 0.5)
+                decoder_lr = self.config["train"].get("decoder_lr", 2.0)
+                other_lr = self.config["train"].get("other_lr", 1.0)
+                
+                encoder_params = []
+                decoder_params = []
+                other_params = []
+                for name, param in self.model.named_parameters():
+                    if not param.requires_grad:
+                        continue
+                    if 'encoder' in name:
+                        encoder_params.append(param)
+                    elif 'decoder' in name:
+                        decoder_params.append(param)
+                    else:
+                        other_params.append(param)
+                
+                self.optimizer = AdamW([
+                    {'params': encoder_params, 'lr': encoder_lr, 'weight_decay': 1e-6},
+                    {'params': decoder_params, 'lr': decoder_lr, 'weight_decay': 1e-5},
+                    {'params': other_params, 'lr': other_lr, 'weight_decay': 0},
+                ])
+                
+                logger.info("Phase 2 (Full Model): Differential LR Multipliers")
+                logger.info(f"├─ Encoder LR: {encoder_lr}")
+                logger.info(f"├─ Decoder LR: {decoder_lr}")
+                logger.info(f"└─ Other LR: {other_lr}")
+
+            # Setup NoamLR Scheduler (Only for 'from scratch' mode)
+            d_model = self.config["model"]["encoder_params"]["d_model"]
+            warmup_steps = self.config["train"]["warmup_steps"]
+            self.lr_scheduler = NoamLR(
+                self.optimizer,
+                warmup_steps= warmup_steps,
+                d_model = d_model
+            )
+            logger.info(f"NoamLR Scheduler Enabled: d_model={d_model}, warmup_steps={warmup_steps}")
 
         # Load dataset
         dataset_config = self.config["dataset"]
@@ -422,18 +434,19 @@ class ASRTask():
             self.train_dataset = ASRDataset(
                 dataset_name=dataset_name,
                 split="train",
-                max_duration=max_duration
-            )
+                max_duration=max_duration,
+                cache_dir=dataset_config.get("hf_cache_dir", None)
+           )
             self.valid_dataset = ASRDataset(
                 dataset_name=dataset_name,
                 split="validation",
-                max_duration=max_duration
-            )
+                max_duration=max_duration,
+                cache_dir=dataset_config.get("hf_cache_dir", None)
+            ) 
         else:
             logger.info("Loading dataset from local dataset saved by save_to_disk")
             from datasets import load_from_disk
 
-            # load root folder only once
             dataset_root = dataset_config["train_filepath"].replace("/train", "")
             local_ds = load_from_disk(dataset_root)
 
@@ -450,24 +463,21 @@ class ASRTask():
         
         valid_loss_best = self.valid_loss_best
 
-        # ===== THAY ĐỔI 5: Thêm gradient monitoring =====
         for epoch in range(self.epoch or 0, self.num_epoch):
             self.epoch = epoch + 1
             logger.info(f"[TRAIN] EPOCH {epoch + 1}/{self.num_epoch} START")
             
-            # Log LR hiện tại
             current_lr = self.optimizer.param_groups[0]['lr']
             logger.info(f"Current Learning Rate: {current_lr:.8f}")
             
             train_stats = self.train_one_epoch()
             logger.success(f"[TRAIN] STATS: {train_stats}")
             
-            # Save checkpoints
             torch.save(
                 {
                     "model": self.model.state_dict(),
                     "optimizer": self.optimizer.state_dict(),
-                    "lr_scheduler": self.lr_scheduler.state_dict(),
+                    "lr_scheduler": self.lr_scheduler.state_dict() if self.lr_scheduler else None,
                     "epoch": self.epoch,
                     "valid_loss_best": valid_loss_best
                 },
@@ -488,14 +498,13 @@ class ASRTask():
                 logger.success(f"Saved best model to {self.output_dir}/valid_loss_best.pt")
 
             logger.info(f"[VALID] EPOCH {epoch + 1}/{self.num_epoch} DONE")
-
-            # ===== THAY ĐỔI 6: Check Phase 1 completion =====
-            if freeze_encoder and valid_wer < 50.0:
-                logger.success("=" * 60)
-                logger.success(f"PHASE 1 COMPLETE: Valid WER = {valid_wer:.2f}% < 50%")
-                logger.success("Consider starting PHASE 2 with unfreeze_encoder")
-                logger.success("=" * 60)
-
+            if is_finetuning and self.lr_scheduler is not None:
+                old_lr = self.optimizer.param_groups[0]['lr']
+                self.lr_scheduler.step(valid_wer)
+                new_lr = self.optimizer.param_groups[0]['lr']
+                if new_lr != old_lr:
+                    logger.info(f"Learning rate reduced from {old_lr} to {new_lr} due to plateau in WER.")
+                    
             wandb.log({"train": train_stats, "valid": valid_stats, "epoch": self.epoch}, commit=True)
 
         self.stop_wandb()
@@ -534,7 +543,7 @@ class ASRTask():
             dataset_root = dataset_config["train_filepath"].replace("/train", "")
             local_ds = load_from_disk(dataset_root)
             logger.info(f"Loading test set from meta file: {test_meta_filepath}")
-            test_dataset = ASRDataset(hf_dataset=local_ds["test"],
+            test_dataset = ASRDataset(hf_dataset=local_ds["test"], 
                                             max_duration=dataset_config.get("max_duration", 10.0))
         
         dataloader = DataLoader(
@@ -625,18 +634,38 @@ class ASRTask():
             kenlm_beta = self.config["decode"].get("kenlm_beta")
         if beam_size is None: # Sửa: Dùng 'is None' để đọc config chính xác
             beam_size = self.config["decode"].get("beam_size", 1)
-
+            
         self.beam_size = beam_size
         self.ctc_decoder = None # Khởi tạo là None
-
+        
         # Chỉ setup decoder nếu beam_size > 1 và có Language Model
         if self.beam_size > 1 and kenlm_path:
             try:
                 from pyctcdecode import build_ctcdecoder
+                
+                # ==========================================================
+                # SỬA LỖI 1: Thêm blank token '' vào cuối vocab
+                # ==========================================================
+                bpe_vocab_list = list(self.vocab)
+                bpe_vocab_list.append('') # Thêm blank token ở cuối
+                logger.info(f"Building ctcdecoder with {len(bpe_vocab_list)} labels (vocab + blank)")
+
+                # ==========================================================
+                # SỬA LỖI 2: Load unigrams từ file 
+                # ==========================================================
+                unigrams_list = None
+                if word_vocab_path and os.path.exists(word_vocab_path):
+                    logger.info(f"Loading unigrams from: {word_vocab_path}")
+                    with open(word_vocab_path, 'r', encoding='utf-8') as f:
+                        unigrams_list = [line.strip() for line in f]
+                    logger.success(f"Loaded {len(unigrams_list)} unigrams")
+                else:
+                    logger.warning(f"word_vocab_path not found or not provided: {word_vocab_path}")
+
                 self.ctc_decoder = build_ctcdecoder(
-                        labels = self.vocab,
+                        labels = bpe_vocab_list,     # SỬA LỖI: Dùng list đã thêm blank
                         kenlm_model_path = kenlm_path,
-                        unigrams = word_vocab_path,
+                        unigrams = unigrams_list,  # SỬA LỖI: Truyền list, không truyền path
                         alpha=kenlm_alpha,
                         beta =kenlm_beta
                 )
@@ -649,23 +678,28 @@ class ASRTask():
 
     def ctc_beamsearch(
             self,
-            encoder_out: torch.Tensor,
-            encoder_out_lens: torch.Tensor,
+            encoder_out: torch.Tensor,     # Shape [1, T_max_mel, D]
+            encoder_out_lens: torch.Tensor, # Shape [1], giá trị T_actual
         )->str:
         
-        encoder_out = encoder_out[:, :, : encoder_out_lens[0]]
-        assert len(encoder_out.shape) == 3, encoder_out.shape
-        assert encoder_out.shape[0] == 1, encoder_out.shape
-        assert encoder_out.shape[2] == encoder_out_lens[0]
-
         with torch.no_grad():
-            log_probs = self.model.decoder(encoder_out)  # [1, T, C+1] log-softmax đã có
-            log_probs_no_blank = log_probs[:, :, :-1]
-            logit = log_probs_no_blank.detach().cpu().squeeze(0).numpy()
+
+            log_probs = self.model.decoder(encoder_out)  
+            probs = torch.exp(log_probs) 
+
+        # 3. Lấy độ dài thực T
+        T_actual = encoder_out_lens[0].item()
+        probs_sample = probs[0, :T_actual, :]
+        # 5. Chuyển sang numpy
+        probs_np = probs_sample.detach().cpu().numpy()
+        
+        # 6. Decode với full probabilities
         text = self.ctc_decoder.decode(
-            logits=logit,
+            logits=probs_np,  # Pass probabilities (T_actual, C+1)
             beam_width=self.beam_size
         )
+        
+        # 7. Cleanup
         text = text.replace("<blank>", "").strip()
         return text
 

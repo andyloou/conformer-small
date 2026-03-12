@@ -13,145 +13,245 @@ import vai_q_onnx
 from datasets import load_dataset 
 import soundfile as sf 
 import gc
-
+import random
+import math
+import librosa
+from loguru import logger
+import torch.nn.functional as F
+from vietasr.model import AudioToMelSpectrogramPreprocessor
 
 class FilterbankFeatures(torch.nn.Module):
     def __init__(
         self,
-        sample_rate=16000, n_window_size=400, n_window_stride=160, window="hann",
-        normalize="per_feature", n_fft=512, preemph=0.97, nfilt=80,
-        lowfreq=0, highfreq=None, log=True, log_zero_guard_type="add",
-        log_zero_guard_value=2**-24, dither=1e-5, pad_to=0,
-        frame_splicing=1, pad_value=0, mag_power=2.0, mel_norm="slaney",
+        sample_rate=16000,
+        n_window_size=400,
+        n_window_stride=160,
+        window="hann",
+        normalize="per_feature",
+        n_fft=512,
+        preemph=0.97,
+        nfilt=80,
+        lowfreq=0,
+        highfreq=None,
+        log=True,
+        log_zero_guard_type="add",
+        log_zero_guard_value=2**-24,
+        dither=1e-5,
+        pad_to=0,
+        frame_splicing=1,
+        exact_pad=False, # Đảm bảo có tham số này
+        pad_value=0,
+        mag_power=2.0,
+        rng=None, # Thêm
+        nb_augmentation_prob=0.0, # Thêm
+        nb_max_freq=4000, # Thêm
+        mel_norm="slaney",
+        stft_exact_pad=False, # Thêm
+        stft_conv=False, # Thêm
     ):
         super().__init__()
-        if highfreq is None: highfreq = sample_rate / 2
-        self.preemph, self.n_fft, self.nfilt = preemph, n_fft or n_window_size, nfilt
-        self.normalize, self.log, self.dither = normalize, log, dither
+        # Thêm logic của rng
+        if rng is None:
+            rng = random.Random()
+        self.rng = rng
+
+        if highfreq is None:
+            highfreq = sample_rate / 2
+        self.preemph = preemph
+        self.n_fft = n_fft or n_window_size
+        self.nfilt = nfilt
+        self.normalize = normalize
+        self.log = log
+        self.dither = dither
         self.frame_splicing = frame_splicing
-        self.n_window_size, self.n_window_stride = n_window_size, n_window_stride
-        self.pad_to, self.pad_value = pad_to, pad_value
-        self.log_zero_guard_type, self.log_zero_guard_value = log_zero_guard_type, log_zero_guard_value
-        self.mag_power, self.mel_norm = mag_power, mel_norm
-        torch_windows = {'hann': torch.hann_window, 'ones': torch.ones}
+        self.n_window_size = n_window_size
+        self.n_window_stride = n_window_stride
+        self.pad_to = pad_to
+        self.exact_pad = exact_pad # Đảm bảo có
+        self.pad_value = pad_value
+        self.log_zero_guard_type = log_zero_guard_type
+        self.log_zero_guard_value = log_zero_guard_value
+        self.mag_power = mag_power
+        # Thêm các thuộc tính mới
+        self.nb_augmentation_prob = nb_augmentation_prob
+        self.nb_max_freq = nb_max_freq
+        self.mel_norm = mel_norm
+
+        torch_windows = {
+            'hann': torch.hann_window,
+            'hamming': torch.hamming_window,
+            'blackman': torch.blackman_window,
+            'bartlett': torch.bartlett_window,
+            'ones': torch.ones,
+            None: torch.ones,
+        }
+        # Thêm win_length, hop_length
+        self.win_length = n_window_size
+        self.hop_length = n_window_stride
         self.register_buffer("window", torch_windows[window](n_window_size, periodic=False))
-        mel_basis = librosa.filters.mel(sr=sample_rate, n_fft=self.n_fft, n_mels=nfilt, fmin=lowfreq, fmax=highfreq, htk=False, norm=mel_norm)
-        self.register_buffer("fb", torch.from_numpy(mel_basis).float())
+        
+        # Thêm logic stft_pad_amount
+        if exact_pad:
+            self.stft_pad_amount = n_window_size // 2
+        else:
+            self.stft_pad_amount = None
+
+        # Create mel filterbank
+        mel_basis = librosa.filters.mel(
+            sr=sample_rate,
+            n_fft=self.n_fft,
+            n_mels=nfilt,
+            fmin=lowfreq,
+            fmax=highfreq,
+            htk=False,
+            norm=mel_norm if mel_norm else None # Cập nhật logic norm
+        )
+        mel_basis = mel_basis[None, :, :]  # Shape: [1, nfilt, n_fft//2 + 1]
+        self.register_buffer("fb", torch.tensor(mel_basis).float())
 
     @torch.no_grad()
     def forward(self, audio, length):
-        if self.dither > 0: audio += self.dither * torch.randn_like(audio)
+        batch_size = audio.size(0) # Thêm
+        if self.dither > 0:
+            audio += self.dither * torch.randn_like(audio)
+        
+        # Cập nhật logic preemphasis
         if self.preemph is not None:
-            audio = torch.cat((audio[:, 0].unsqueeze(1), audio[:, 1:] - self.preemph * audio[:, :-1]), dim=1)
-        stft = torch.stft(audio, n_fft=self.n_fft, hop_length=self.n_window_stride,
-                          win_length=self.n_window_size, window=self.window.to(audio.device),
-                          center=True, pad_mode='reflect', return_complex=True)
+            preemph_audio = audio.new_zeros(audio.shape)
+            preemph_audio[:, 1:] = audio[:, 1:] - self.preemph * audio[:, :-1]
+            preemph_audio[:, 0] = audio[:, 0]
+            audio = preemph_audio
+            
+        # *** LOGIC PADDING QUAN TRỌNG TỪ covert_to_onnx.py ***
+        if self.exact_pad:
+            pad_amount = self.stft_pad_amount
+            audio = F.pad(audio.unsqueeze(1), (pad_amount, pad_amount), mode="reflect").squeeze(1)
+            length += 2 * pad_amount
+        else:
+            pad_amount = (self.n_window_size - self.n_window_stride) // 2
+            # Đảm bảo audio đủ dài cho ít nhất 1 frame
+            if audio.size(1) < self.n_window_size:
+                 pad_right = self.n_window_size - audio.size(1)
+                 audio = F.pad(audio, (0, pad_right), mode="reflect")
+            
+            # Tính toán padding cần thiết
+            # (Thêm điều kiện check audio.size(1) > pad_amount)
+            needed_length = 0
+            if audio.size(1) > pad_amount:
+                 needed_length = pad_amount + math.ceil((audio.size(1) - pad_amount) / self.n_window_stride) * self.n_window_stride
+            
+            if needed_length > audio.size(1):
+                pad_right = needed_length - audio.size(1)
+                audio = F.pad(audio, (0, pad_right), mode="reflect")
+
+        # Compute STFT
+        stft = torch.stft(
+            audio,
+            n_fft=self.n_fft,
+            hop_length=self.n_window_stride,
+            win_length=self.n_window_size,
+            window=self.window,
+            center=False, # <-- THAY ĐỔI QUAN TRỌNG
+            pad_mode='reflect', # (Mặc dù center=False, nhưng giữ lại)
+            return_complex=True
+        )
+        
+        # Compute power spectrogram
         mag = torch.abs(stft)
-        power = mag.pow(self.mag_power)
-        mel = torch.matmul(self.fb.to(power.device), power)
+        power = mag ** self.mag_power  # Shape: [batch_size, n_fft//2 + 1, time]
+        
+        # Apply mel filterbank
+        # Đảm bảo device matching
+        mel = torch.matmul(self.fb.to(power.device), power)  
+        
+        # Log scale
         if self.log:
-            mel = torch.log(torch.clamp(mel, min=self.log_zero_guard_value))
+            if self.log_zero_guard_type == "add":
+                mel = torch.log(mel + self.log_zero_guard_value)
+            elif self.log_zero_guard_type == "clamp":
+                mel = torch.clamp(mel, min=self.log_zero_guard_value).log()
+        
+        # Normalize (Logic từ covert_to_onnx.py)
         if self.normalize == "per_feature":
-            mean, std = torch.mean(mel, dim=-1, keepdim=True), torch.std(mel, dim=-1, keepdim=True)
-            mel = (mel - mean) / (std + 1e-5)
-        length = (length + self.n_window_stride // 2) // self.n_window_stride
+            mean = mel.mean(dim=-1, keepdim=True)
+            std = mel.std(dim=-1, keepdim=True) + 1e-5 # epsilon
+            mel = (mel - mean) / std
+        elif self.normalize == "all_features":
+            mean = mel.mean(keepdim=True)
+            std = mel.std(keepdim=True) + 1e-5
+            mel = (mel - mean) / std
+        
+        # Frame splicing
+        if self.frame_splicing > 1:
+            mel = mel.reshape(mel.size(0), mel.size(1) // self.frame_splicing, mel.size(1) * self.frame_splicing)
+        
+        # Pad to
+        if self.pad_to > 0:
+            N = mel.size(-1)
+            P = self.pad_to - N % self.pad_to
+            if P > 0:
+                mel = F.pad(mel, (0, P), value=self.pad_value)
+                
+        # Update length for STFT (Logic từ covert_to_onnx.py)
+        length = (length - self.n_window_size) // self.n_window_stride + 1
+        actual_time_steps = mel.shape[-1]
+        length = torch.clamp(length, max=actual_time_steps)
+        
         return mel, length
 
 
-class AudioToMelSpectrogramPreprocessor(torch.nn.Module):
-    # ... (Code giữ nguyên) ...
-    def __init__( self, sample_rate=16000, window_size=0.025, window_stride=0.01,
-        window="hann", normalize="per_feature", n_fft=512, features=80, **kwargs):
-        super().__init__()
-        self.featurizer = FilterbankFeatures(
-            sample_rate=sample_rate, n_window_size=int(window_size * sample_rate),
-            n_window_stride=int(window_stride * sample_rate), window=window,
-            normalize=normalize, n_fft=n_fft, nfilt=features, **kwargs
-        )
-    @torch.no_grad()
-    def forward(self, input_signal, length):
-        return self.featurizer(input_signal, length)
 
 
 class MelSpecDataReader(CalibraterBase):
     def __init__(
-        self, 
-        model_path, 
-        dataset_path=None,  # Giữ để backward compatible
-        max_samples=100, 
-        batch_size=1, 
-        input_name='mel_spectrogram', 
+        self,
+        model_path,
+        config: dict, # <<< THÊM MỚI: Nhận config
+        max_samples=100,
+        input_name='mel_spectrogram',
         length_name='mel_length',
-        use_huggingface=True,  # NEW: Flag để chọn source
-        dataset_name="linhtran92/viet_bud500",  # NEW
-        split="test",  # NEW
-        max_duration=20.0  # NEW: Giới hạn audio dài
+        use_huggingface=True,
+        dataset_name="linhtran92/viet_bud500",
+        split="test",
+        max_duration=10.0
     ):
         super().__init__(model_path)
-        print("Initializing Preprocessor for Calibration...")
-        self.preprocessor = AudioToMelSpectrogramPreprocessor(
-            sample_rate=16000, window_size=0.025, window_stride=0.01,
-            features=80, n_fft=512, dither=1.0e-05, preemph=0.97
-        )
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info("[MelSpecDataReader] Initializing Preprocessor for Calibration...")
+        
+        # --- THAY ĐỔI: Khởi tạo preprocessor chuẩn từ config ---
+        preproc_cfg = config.get("preprocessor", {})
+        self.preprocessor = AudioToMelSpectrogramPreprocessor(**preproc_cfg)
+        self.preprocessor.to(self.device)
         self.preprocessor.eval()
-        print("Preprocessor Initialized.")
+        logger.info("[MelSpecDataReader] Preprocessor Initialized.")
+        # --- Hết thay đổi ---
 
         self.use_huggingface = use_huggingface
         self.max_duration = max_duration
-        self.target_sr = 16000
+        self.target_sr = config["dataset"].get("target_sampling_rate", 16000)
 
         if use_huggingface:
-            # Load từ HuggingFace
-            print(f"Loading HuggingFace dataset: {dataset_name} (split={split})")
+            logger.info(f"[MelSpecDataReader] Loading HF dataset: {dataset_name} (split={split})")
             self.dataset = load_dataset(dataset_name, split=split, streaming=False)
             
-            # Filter audio dài (nếu cần)
             if max_duration:
-                print(f"Filtering audios with duration <= {max_duration}s")
+                logger.info(f"[MelSpecDataReader] Filtering audios <= {max_duration}s")
                 def filter_fn(example):
                     duration = len(example['audio']['array']) / example['audio']['sampling_rate']
                     return duration <= max_duration
                 self.dataset = self.dataset.filter(filter_fn)
             
-            # Giới hạn số lượng samples
             total_samples = len(self.dataset)
             if max_samples > 0 and total_samples > max_samples:
-                print(f"Limiting calibration to {max_samples} random samples (total={total_samples})")
+                logger.info(f"[MelSpecDataReader] Limiting calibration to {max_samples} samples")
                 indices = np.random.choice(total_samples, max_samples, replace=False)
                 self.dataset = self.dataset.select(indices)
             
-            print(f"Prepared {len(self.dataset)} samples for calibration.")
-            self.audio_files = None  # Không dùng file paths
+            logger.info(f"[MelSpecDataReader] Prepared {len(self.dataset)} samples.")
         else:
-            # Load local dataset đã save_to_disk
-            from datasets import load_from_disk
-
-            print(f"Loading local dataset from: {dataset_path}")
-            ds = load_from_disk(dataset_path)
-
-            # Chọn split (train / validation / test)
-            if split not in ds:
-                raise ValueError(f"Split '{split}' không tồn tại trong dataset. Splits có: {list(ds.keys())}")
-
-            self.dataset = ds[split]
-
-            # Filter duration
-            if max_duration:
-                print(f"Filtering audios <= {max_duration}s")
-                def filter_fn(example):
-                    dur = len(example['audio']['array']) / example['audio']['sampling_rate']
-                    return dur <= max_duration
-                self.dataset = self.dataset.filter(filter_fn)
-
-            # Giới hạn số samples
-            total = len(self.dataset)
-            if max_samples > 0 and total > max_samples:
-                import numpy as np
-                idx = np.random.choice(total, max_samples, replace=False)
-                self.dataset = self.dataset.select(idx)
-
-            print(f"Prepared {len(self.dataset)} samples for calibration (local).")
-            self.audio_files = None
+            # Logic load local (nếu bạn cần)
+            raise NotImplementedError("Local dataset calibration not fully implemented in this refactor")
 
         self.input_name = input_name
         self.length_name = length_name
@@ -159,75 +259,42 @@ class MelSpecDataReader(CalibraterBase):
         self.enum_data = None
 
     def get_next(self):
-        """Returns the next batch of data (batch size is 1)."""
         if self.enum_data is None:
             self.enum_data = iter(self._process_data())
-        
-        batch_data = next(self.enum_data, None)
-        return batch_data
+        return next(self.enum_data, None)
 
+    @torch.no_grad()
     def _process_data(self):
-        """Generator function to process audio samples."""
         if self.use_huggingface:
-            # Process HuggingFace dataset
             for i, example in enumerate(self.dataset):
                 try:
-                    # Extract audio từ HuggingFace format
                     audio_dict = example['audio']
-                    waveform_np = audio_dict['array']  # NumPy array
+                    waveform_np = audio_dict['array']
                     sr = audio_dict['sampling_rate']
                     
-                    # Convert to torch tensor [1, T]
-                    waveform = torch.from_numpy(waveform_np).float().unsqueeze(0)
+                    waveform = torch.from_numpy(waveform_np).float().unsqueeze(0).to(self.device)
                     
-                    # Resample nếu cần
                     if sr != self.target_sr:
                         waveform = torchaudio.transforms.Resample(sr, self.target_sr)(waveform)
                     
-                    # Convert to mono nếu cần
                     if waveform.shape[0] > 1:
                         waveform = torch.mean(waveform, dim=0, keepdim=True)
                     
-                    # Get length
-                    length = torch.tensor([waveform.shape[1]], dtype=torch.long)
+                    length = torch.tensor([waveform.shape[1]], dtype=torch.long).to(self.device)
                     
-                    # Run preprocessor
+                    # Chạy preprocessor chuẩn
                     mel_tensor, mel_length_tensor = self.preprocessor(waveform, length)
                     
-                    # Convert to numpy
                     mel_np = mel_tensor.cpu().numpy().astype(np.float32)
                     mel_length_np = mel_length_tensor.cpu().numpy().astype(np.int64)
                     
                     yield {self.input_name: mel_np, self.length_name: mel_length_np}
                 
                 except Exception as e:
-                    print(f"\nError processing HF sample {i}: {e}. Skipping.")
+                    logger.warning(f"\n[MelSpecDataReader] Error processing sample {i}: {e}. Skipping.")
                     continue
         else:
-            # Process local files (code cũ)
-            for i, audio_path in enumerate(self.audio_files):
-                try:
-                    waveform, sr = torchaudio.load(audio_path)
-                    
-                    if waveform.shape[0] > 1:
-                        waveform = torch.mean(waveform, dim=0, keepdim=True)
-                    if sr != self.target_sr:
-                        waveform = torchaudio.transforms.Resample(sr, self.target_sr)(waveform)
-                    if waveform.dtype != torch.float32:
-                        waveform = waveform.float()
-                    
-                    length = torch.tensor([waveform.shape[1]], dtype=torch.long)
-                    
-                    mel_tensor, mel_length_tensor = self.preprocessor(waveform, length)
-                    
-                    mel_np = mel_tensor.cpu().numpy().astype(np.float32)
-                    mel_length_np = mel_length_tensor.cpu().numpy().astype(np.int64)
-                    
-                    yield {self.input_name: mel_np, self.length_name: mel_length_np}
-                
-                except Exception as e:
-                    print(f"\nError processing file {audio_path}: {e}. Skipping.")
-                    continue
+            pass # Bỏ qua logic file local cũ
 
 def quantize_quartznet_model(model_path, output_path, dataset_name, max_samples=100): 
     print("=== Model Quantization ===")

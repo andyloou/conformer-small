@@ -1,0 +1,95 @@
+{
+  "baseline_wer": 6.497797356828194,
+  "layer_sensitivity": {
+    "decoder": {
+      "wer": 17.62114537444934,
+      "wer_increase": 11.123348017621147,
+      "num_nodes": 6
+    },
+    "layers.0": {
+      "wer": 32.378854625550666,
+      "wer_increase": 25.881057268722472,
+      "num_nodes": 457
+    },
+    "layers.1": {
+      "wer": 38.32599118942731,
+      "wer_increase": 31.82819383259912,
+      "num_nodes": 315
+    },
+    "layers.10": {
+      "wer": 34.47136563876652,
+      "wer_increase": 27.973568281938327,
+      "num_nodes": 315
+    },
+    "layers.11": {
+      "wer": 73.01762114537445,
+      "wer_increase": 66.51982378854626,
+      "num_nodes": 315
+    },
+    "layers.12": {
+      "wer": 67.95154185022027,
+      "wer_increase": 61.45374449339207,
+      "num_nodes": 315
+    },
+    "layers.13": {
+      "wer": 69.49339207048459,
+      "wer_increase": 62.995594713656395,
+      "num_nodes": 315
+    },
+    "layers.14": {
+      "wer": 16.409691629955947,
+      "wer_increase": 9.911894273127754,
+      "num_nodes": 315
+    },
+    "layers.15": {
+      "wer": 19.383259911894275,
+      "wer_increase": 12.88546255506608,
+      "num_nodes": 315
+    },
+    "layers.2": {
+      "wer": 31.607929515418505,
+      "wer_increase": 25.11013215859031,
+      "num_nodes": 315
+    },
+    "layers.3": {
+      "wer": 22.026431718061673,
+      "wer_increase": 15.528634361233479,
+      "num_nodes": 315
+    },
+    "layers.4": {
+      "wer": 35.02202643171806,
+      "wer_increase": 28.524229074889867,
+      "num_nodes": 315
+    },
+    "layers.5": {
+      "wer": 62.22466960352423,
+      "wer_increase": 55.72687224669603,
+      "num_nodes": 315
+    },
+    "layers.6": {
+      "wer": 29.955947136563875,
+      "wer_increase": 23.45814977973568,
+      "num_nodes": 315
+    },
+    "layers.7": {
+      "wer": 67.18061674008811,
+      "wer_increase": 60.68281938325992,
+      "num_nodes": 315
+    },
+    "layers.8": {
+      "wer": 21.916299559471366,
+      "wer_increase": 15.418502202643172,
+      "num_nodes": 315
+    },
+    "layers.9": {
+      "wer": 36.013215859030836,
+      "wer_increase": 29.515418502202643,
+      "num_nodes": 315
+    },
+    "pre_encode": {
+      "wer": 25.88105726872247,
+      "wer_increase": 19.383259911894275,
+      "num_nodes": 74
+    }
+  }
+}

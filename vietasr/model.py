@@ -1072,4 +1072,3 @@ def ctc_greedy_decode(log_probs, blank_id):
             result.append(t)
         prev = t
     return result
-

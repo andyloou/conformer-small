@@ -5,20 +5,14 @@ import torch
 from torch.optim.lr_scheduler import _LRScheduler
 
 
-class WarmupLR(_LRScheduler):
-    """The WarmupLR scheduler
+class NoamLR(_LRScheduler):
+    """
 
-    This scheduler is almost same as NoamLR Scheduler except for following difference:
+     NoamLR Scheduler:
 
     NoamLR:
         lr = optimizer.lr * model_size ** -0.5
              * min(step ** -0.5, step * warmup_step ** -1.5)
-    WarmupLR:
-        lr = optimizer.lr * warmup_step ** 0.5
-             * min(step ** -0.5, step * warmup_step ** -1.5)
-
-    Note that the maximum lr equals to optimizer.lr in this scheduler.
-
     """
 
     def __init__(
