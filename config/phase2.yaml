@@ -51,6 +51,7 @@ preprocessor:
 
 dataset:
   use_huggingface: false
+  hf_cache_dir: /home/datasets/linhtran92___viet_bud500/
   train_filepath : viet_bud500_processed/train
   test_filepath : viet_bud500_processed/test 
   validation_filepath: viet_bud500_processed/validation
@@ -112,7 +113,7 @@ train:
   use_amp: false                    # ← BẬT lại AMP (decoder đã stable)
   
   # ===== RESUME FROM PHASE 1 =====
-  pretrained_path: exps/bud500/conformer_phase1/epoch_11.pt
+  pretrained_path: exps/bud500/conformer_phase2/best_viet_bud500_weight.pt
   wandb_config:
     project: bud500-asr-phase2
     tag: conformer-unfreeze-encoder-v2
