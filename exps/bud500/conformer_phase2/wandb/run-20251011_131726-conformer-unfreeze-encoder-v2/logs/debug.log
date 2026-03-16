@@ -1,0 +1,22 @@
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_setup.py:_flush():81] Current SDK version is 0.22.1
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_setup.py:_flush():81] Configure stats pid to 2358951
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_setup.py:_flush():81] Loading settings from /home/andyloou/.config/wandb/settings
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_setup.py:_flush():81] Loading settings from /home/andyloou/conformer-small/wandb/settings
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_init.py:setup_run_log_directory():705] Logging user logs to exps/bud500/conformer_phase2/wandb/run-20251011_131726-conformer-unfreeze-encoder-v2/logs/debug.log
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_init.py:setup_run_log_directory():706] Logging internal logs to exps/bud500/conformer_phase2/wandb/run-20251011_131726-conformer-unfreeze-encoder-v2/logs/debug-internal.log
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_init.py:init():832] calling init triggers
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_init.py:init():837] wandb.init called with sweep_config: {}
+config: {'model': {'features_extractor_params': {'global_cmvn_path': None}, 'num_mel_bins': 80, 'subsampling_channel': 176, 'subsampling_dropout': 0.1, 'type_encoder': 'conformer', 'sinusoidal_pos_enc_style': 'add', 'position_dropout': 0.1, 'encoder_params': {'d_model': 176, 'n_layers': 16, 'nhead': 4, 'dropout': 0.1, 'conv_kernel_size': 31, 'conv_mult': 1, 'ffn_mult': 4, 'pre_norm': True}, 'ctc_weight': 1.0, 'ctc_linear_dropout': 0.1, 'freq_masks': 3, 'time_masks': 10, 'freq_width': 30, 'time_width': 0.1, 'decoder_params': {'n_layers': 1, 'd_model': 176, 'n_head': 4, 'dropout': 0.1, 'pre_norm': True}, 'label_smoothing_weight': 0.0, 'label_smoothing_normalize_length': False}, 'preprocessor': {'sample_rate': 16000, 'normalize': 'per_feature', 'window_size': 0.025, 'window_stride': 0.01, 'window': 'hann', 'features': 80, 'n_fft': 512, 'log': True, 'frame_splicing': 1, 'dither': 1e-05, 'pad_to': 0, 'pad_value': 0.0}, 'dataset': {'use_huggingface': True, 'dataset_name': 'linhtran92/viet_bud500', 'max_duration': 15.0, 'target_sampling_rate': 16000, 'bpe_model_path': 'data/bpe_4000/bpe.model', 'batch_size': 64, 'num_worker': 12}, 'train': {'output_dir': 'exps/bud500/conformer_phase2', 'debug_lr': False, 'freeze_encoder': False, 'resume_mode': 'full', 'num_epoch': 50, 'encoder_lr': 0.5, 'decoder_lr': 2.0, 'other_lr': 1.0, 'd_model': 176, 'warmup_steps': 3000, 'weight_decay': 1e-05, 'acc_steps': 4, 'use_amp': False, 'pretrained_path': 'exps/bud500/conformer_phase1/epoch_11.pt', 'wandb_config': {'project': 'bud500-asr-phase2', 'tag': 'conformer-unfreeze-encoder-v2'}}, 'decode': {'beam_size': 4, 'kenlm_path': 'data/lm-5gram-0,0,0,1.binary', 'word_vocab_path': 'data/word_vocab.txt', 'kenlm_alpha': 0.7, 'kenlm_beta': 1.0}, '_wandb': {}}
+2025-10-11 13:17:26,135 INFO    MainThread:2358951 [wandb_init.py:init():880] starting backend
+2025-10-11 13:17:26,337 INFO    MainThread:2358951 [wandb_init.py:init():883] sending inform_init request
+2025-10-11 13:17:26,339 INFO    MainThread:2358951 [wandb_init.py:init():891] backend started and connected
+2025-10-11 13:17:26,340 INFO    MainThread:2358951 [wandb_init.py:init():961] updated telemetry
+2025-10-11 13:17:26,342 INFO    MainThread:2358951 [wandb_init.py:init():985] communicating run to backend with 90.0 second timeout
+2025-10-11 13:17:27,351 INFO    MainThread:2358951 [wandb_init.py:init():1031] run resumed
+2025-10-11 13:17:27,352 INFO    MainThread:2358951 [wandb_init.py:init():1036] starting run threads in backend
+2025-10-11 13:17:27,384 INFO    MainThread:2358951 [wandb_run.py:_console_start():2506] atexit reg
+2025-10-11 13:17:27,384 INFO    MainThread:2358951 [wandb_run.py:_redirect():2354] redirect: wrap_raw
+2025-10-11 13:17:27,385 INFO    MainThread:2358951 [wandb_run.py:_redirect():2423] Wrapping output streams.
+2025-10-11 13:17:27,385 INFO    MainThread:2358951 [wandb_run.py:_redirect():2446] Redirects installed.
+2025-10-11 13:17:27,386 INFO    MainThread:2358951 [wandb_init.py:init():1076] run started, returning control to user process

@@ -1,0 +1,12 @@
+{"time":"2025-10-11T12:29:02.633108278-04:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
+{"time":"2025-10-11T12:29:03.071019592-04:00","level":"INFO","msg":"stream: created new stream","id":"conformer-unfreeze-encoder-v2"}
+{"time":"2025-10-11T12:29:03.071053055-04:00","level":"INFO","msg":"handler: started","stream_id":"conformer-unfreeze-encoder-v2"}
+{"time":"2025-10-11T12:29:03.071084785-04:00","level":"INFO","msg":"stream: started","id":"conformer-unfreeze-encoder-v2"}
+{"time":"2025-10-11T12:29:03.071101828-04:00","level":"INFO","msg":"writer: started","stream_id":"conformer-unfreeze-encoder-v2"}
+{"time":"2025-10-11T12:29:03.071103781-04:00","level":"INFO","msg":"sender: started","stream_id":"conformer-unfreeze-encoder-v2"}
+{"time":"2025-10-11T12:31:16.255576563-04:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"updating run metadata","runtime_seconds":0.000443661}],"total_operations":1}}
+{"time":"2025-10-11T12:31:17.556024827-04:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-10-11T12:31:17.94686475-04:00","level":"INFO","msg":"stream: closing","id":"conformer-unfreeze-encoder-v2"}
+{"time":"2025-10-11T12:31:17.946872134-04:00","level":"INFO","msg":"handler: closed","stream_id":"conformer-unfreeze-encoder-v2"}
+{"time":"2025-10-11T12:31:17.946904265-04:00","level":"INFO","msg":"sender: closed","stream_id":"conformer-unfreeze-encoder-v2"}
+{"time":"2025-10-11T12:31:17.946907672-04:00","level":"INFO","msg":"stream: closed","id":"conformer-unfreeze-encoder-v2"}

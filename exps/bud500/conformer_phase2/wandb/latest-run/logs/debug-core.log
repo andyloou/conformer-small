@@ -1,0 +1,7 @@
+{"time":"2025-10-11T13:17:26.142044455-04:00","level":"INFO","msg":"main: starting server","port-filename":"/tmp/tmp9u0m0dov/port-2358951.txt","pid":2358951,"log-level":0,"disable-analytics":false,"shutdown-on-parent-exit":false,"enable-dcgm-profiling":false}
+{"time":"2025-10-11T13:17:26.142313512-04:00","level":"INFO","msg":"server: will exit if parent process dies","ppid":2358951}
+{"time":"2025-10-11T13:17:26.142279428-04:00","level":"INFO","msg":"server: accepting connections","addr":{"Name":"/tmp/wandb-2358951-2359025-3664346431/socket","Net":"unix"}}
+{"time":"2025-10-11T13:17:26.337679163-04:00","level":"INFO","msg":"connection: ManageConnectionData: new connection created","id":"1(@)"}
+{"time":"2025-10-11T13:17:26.340223266-04:00","level":"INFO","msg":"handleInformInit: received","streamId":"conformer-unfreeze-encoder-v2","id":"1(@)"}
+{"time":"2025-10-11T13:17:26.757819009-04:00","level":"INFO","msg":"handleInformInit: stream started","streamId":"conformer-unfreeze-encoder-v2","id":"1(@)"}
+{"time":"2025-10-20T06:02:33.835363566-04:00","level":"INFO","msg":"server: parent process exited, terminating service process"}

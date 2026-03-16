@@ -1,0 +1,10 @@
+[32m2025-10-11 12:55:20.126[0m | [1mINFO    [0m | [36mvietasr.asr_task[0m:[36mrun_train[0m:[36m438[0m - [1m[TRAIN] EPOCH 1/50 START[0m
+[32m2025-10-11 12:55:20.126[0m | [1mINFO    [0m | [36mvietasr.asr_task[0m:[36mrun_train[0m:[36m442[0m - [1mCurrent Learning Rate: 0.00000023[0m
+/home/andyloou/conformer-small/vietasr/asr_task.py:90: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(init_scale=2.**16, enabled=self.use_amp)
+[32m2025-10-11 12:55:43.283[0m | [1mINFO    [0m | [36mvietasr.asr_task[0m:[36mtrain_one_epoch[0m:[36m162[0m - [1m[TRAIN] EPOCH 1 | BATCH 100 | loss=1.6287226676940918 | ctc_loss=6.514890670776367 | decoder_loss=0.0[0m
+[32m2025-10-11 12:55:43.295[0m | [33m[1mWARNING [0m | [36mvietasr.asr_task[0m:[36mtrain_one_epoch[0m:[36m165[0m - [33m[1m+ Label  : anh sẽ cứu em mà anh đã chuẩn bị sn[0m
+[32m2025-10-11 12:55:43.296[0m | [33m[1mWARNING [0m | [36mvietasr.asr_task[0m:[36mtrain_one_epoch[0m:[36m166[0m - [33m[1m+ Predict: biết ra[0m
+[32m2025-10-11 12:55:56.128[0m | [33m[1mWARNING [0m | [36m__main__[0m:[36m<module>[0m:[36m54[0m - [33m[1m
+Training interrupted by user (Ctrl+C)[0m
+[32m2025-10-11 12:55:56.129[0m | [1mINFO    [0m | [36m__main__[0m:[36m<module>[0m:[36m55[0m - [1mSaving current state...[0m

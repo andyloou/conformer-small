@@ -1,0 +1,147 @@
+_wandb:
+    value:
+        cli_version: 0.22.1
+        e:
+            yr656uwglviaxpftu2yrrkvcaa95pjqf:
+                args:
+                    - -c
+                    - config/phase2.yaml
+                    - --output_dir
+                    - exps/bud500/conformer_phase2
+                    - -d
+                    - cuda
+                codePath: train.py
+                codePathLocal: train.py
+                cpu_count: 12
+                cpu_count_logical: 24
+                cudaVersion: "13.0"
+                disk:
+                    /:
+                        total: "99951767552"
+                        used: "49476661248"
+                email: salon462003@gmail.com
+                executable: /home/andyloou/miniconda3/envs/nemo/bin/python
+                git:
+                    commit: b099eea49fd14d0633d4c5a2bd013cbf4a915e05
+                    remote: https://github.com/andyloou/conformer-small.git
+                gpu: NVIDIA GeForce RTX 3090
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 10496
+                      memoryTotal: "25769803776"
+                      name: NVIDIA GeForce RTX 3090
+                      uuid: GPU-7b49b55f-4872-9ea4-c8f4-c8ec7c1841a4
+                host: cica-sun
+                memory:
+                    total: "66312925184"
+                os: Linux-4.18.0-553.75.1.el8_10.x86_64-x86_64-with-glibc2.28
+                program: /home/andyloou/conformer-small/train.py
+                python: CPython 3.11.4
+                root: exps/bud500/conformer_phase2
+                startedAt: "2025-10-11T16:29:02.425780Z"
+                writerId: yr656uwglviaxpftu2yrrkvcaa95pjqf
+        m: []
+        python_version: 3.11.4
+        t:
+            "1":
+                - 1
+                - 49
+                - 51
+                - 53
+            "2":
+                - 1
+                - 49
+                - 51
+                - 53
+            "3":
+                - 2
+                - 13
+                - 14
+                - 16
+                - 35
+                - 34
+            "4": 3.11.4
+            "5": 0.22.1
+            "12": 0.22.1
+            "13": linux-x86_64
+dataset:
+    value:
+        batch_size: 64
+        bpe_model_path: data/bpe_4000/bpe.model
+        dataset_name: linhtran92/viet_bud500
+        max_duration: 15
+        num_worker: 12
+        target_sampling_rate: 16000
+        use_huggingface: true
+decode:
+    value:
+        beam_size: 4
+        kenlm_alpha: 0.7
+        kenlm_beta: 1
+        kenlm_path: data/lm-5gram-0,0,0,1.binary
+        word_vocab_path: data/word_vocab.txt
+model:
+    value:
+        ctc_linear_dropout: 0.1
+        ctc_weight: 1
+        decoder_params:
+            d_model: 176
+            dropout: 0.1
+            n_head: 4
+            n_layers: 1
+            pre_norm: true
+        encoder_params:
+            conv_kernel_size: 31
+            conv_mult: 1
+            d_model: 176
+            dropout: 0.1
+            ffn_mult: 4
+            n_layers: 16
+            nhead: 4
+            pre_norm: true
+        features_extractor_params:
+            global_cmvn_path: null
+        freq_masks: 3
+        freq_width: 30
+        label_smoothing_normalize_length: false
+        label_smoothing_weight: 0
+        num_mel_bins: 80
+        position_dropout: 0.1
+        sinusoidal_pos_enc_style: add
+        subsampling_channel: 176
+        subsampling_dropout: 0.1
+        time_masks: 10
+        time_width: 0.1
+        type_encoder: conformer
+preprocessor:
+    value:
+        dither: 1e-05
+        features: 80
+        frame_splicing: 1
+        log: true
+        n_fft: 512
+        normalize: per_feature
+        pad_to: 0
+        pad_value: 0
+        sample_rate: 16000
+        window: hann
+        window_size: 0.025
+        window_stride: 0.01
+train:
+    value:
+        acc_steps: 4
+        decoder_lr: 0.001
+        encoder_lr: 5e-05
+        freeze_encoder: false
+        num_epoch: 50
+        other_lr: 0.005
+        output_dir: exps/bud500/conformer_phase2
+        pretrained_path: exps/bud500/conformer_phase1/epoch_11.pt
+        resume_mode: full
+        use_amp: false
+        wandb_config:
+            project: bud500-asr-phase2
+            tag: conformer-unfreeze-encoder-v2
+        warmup_steps: 7000
+        weight_decay: 1e-05
