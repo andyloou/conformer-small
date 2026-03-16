@@ -9,7 +9,7 @@ from loguru import logger
 import numpy as np
 from utils import load_config, save_config
 from vietasr.dataset.dataset import ASRDataset, ASRCollator
-from vietasr.model import ConformerCTC as ASRModel, AudioToMelSpectrogramPreprocessor, FilterbankFeatures
+from vietasr.model import ConformerCTC as ASRModel, AudioToMelSpectrogramPreprocessor
 from vietasr.utils.lr_scheduler import NoamLR
 from vietasr.utils.utils import calculate_wer
 import torch.cuda.amp as amp
@@ -25,6 +25,7 @@ class ASRTask():
         )
         self.vocab = self.collate_fn.get_vocab()
         model = ASRModel(vocab_size=len(self.vocab), pad_id=self.collate_fn.pad_id, **config["model"])
+
         if output_dir is not None:
             self.output_dir = output_dir
         else:
@@ -86,7 +87,7 @@ class ASRTask():
         self.optimizer.zero_grad()
 
         # THÊM: AMP scaler với device explicit
-        scaler = torch.amp.GradScaler(init_scale=2.**16, enabled=self.use_amp)
+        scaler = torch.cuda.amp.GradScaler(init_scale=2.**16, enabled=self.use_amp)
 
         for i, batch in enumerate(dataloader):
             # Giữ nguyên preprocess: audio to mel
@@ -534,7 +535,8 @@ class ASRTask():
             test_dataset = ASRDataset(
                 dataset_name=dataset_name,
                 split="test",
-                max_duration=max_duration
+                max_duration=max_duration,
+                cache_dir= "/home/datasets/" 
             )
         else:
             from datasets import load_from_disk
@@ -542,9 +544,10 @@ class ASRTask():
             # load root folder only once
             dataset_root = dataset_config["train_filepath"].replace("/train", "")
             local_ds = load_from_disk(dataset_root)
+
             logger.info(f"Loading test set from meta file: {test_meta_filepath}")
             test_dataset = ASRDataset(hf_dataset=local_ds["test"], 
-                                            max_duration=dataset_config.get("max_duration", 10.0))
+                                        max_duration=dataset_config.get("max_duration", 10.0))
         
         dataloader = DataLoader(
             dataset=test_dataset,
