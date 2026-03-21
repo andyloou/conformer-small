@@ -1112,8 +1112,8 @@ if __name__ == "__main__":
     
     model = ConformerCTC(vocab_path=VOCAB_PATH)
 
-    checkpoint_path = "exps/bud500/vlsp_vivos.pt"
-    output_onnx_path = "conformer_vie_vivos_vlsp.onnx"
+    checkpoint_path = "exps/bud500/conformer_phase2/best_viet_bud500_weight.pt"
+    output_onnx_path = "conformer_vie.onnx"
     model.load_checkpoint(checkpoint_path, resume_mode="full") 
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -1189,7 +1189,7 @@ if __name__ == "__main__":
     print("\nValidating ONNX model...")
     import onnxruntime as ort
     
-    ort_session = ort.InferenceSession(output_onnx_path)
+    ort_session = ort.InferenceSession(output_onnx_path, providers = ['CPUExecutionProvider'])
     ort_inputs = {
         'mel_spectrogram': dummy_mel_input.cpu().numpy(),
         'mel_length': dummy_mel_length.cpu().numpy()

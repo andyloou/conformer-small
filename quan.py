@@ -10,7 +10,7 @@ import math
 import librosa
 import traceback
 import vai_q_onnx
-from datasets import load_dataset 
+from datasets import load_from_disk
 import soundfile as sf 
 import gc
 import random
@@ -232,25 +232,23 @@ class MelSpecDataReader(CalibraterBase):
         self.target_sr = config["dataset"].get("target_sampling_rate", 16000)
 
         if use_huggingface:
-            logger.info(f"[MelSpecDataReader] Loading HF dataset: {dataset_name} (split={split})")
-            self.dataset = load_dataset(dataset_name, split=split, streaming=False)
-            
+            logger.info(f"[MelSpecDataReader] Loading local dataset from: {dataset_name}")
+            full_ds = load_from_disk(dataset_name)
+            self.dataset = full_ds[split]
+
+            # Lọc thủ công thay vì dùng .filter() để tránh ghi temp file
             if max_duration:
                 logger.info(f"[MelSpecDataReader] Filtering audios <= {max_duration}s")
-                def filter_fn(example):
-                    duration = len(example['audio']['array']) / example['audio']['sampling_rate']
-                    return duration <= max_duration
-                self.dataset = self.dataset.filter(filter_fn)
-            
-            total_samples = len(self.dataset)
-            if max_samples > 0 and total_samples > max_samples:
-                logger.info(f"[MelSpecDataReader] Limiting calibration to {max_samples} samples")
-                indices = np.random.choice(total_samples, max_samples, replace=False)
-                self.dataset = self.dataset.select(indices)
-            
+                valid_indices = [
+                    i for i, example in enumerate(self.dataset)
+                    if len(example['audio']['array']) / example['audio']['sampling_rate'] <= max_duration
+                ]
+                self.dataset = self.dataset.select(valid_indices[:max_samples] if max_samples > 0 else valid_indices)
+            elif max_samples > 0 and len(self.dataset) > max_samples:
+                self.dataset = self.dataset.select(range(max_samples))
+
             logger.info(f"[MelSpecDataReader] Prepared {len(self.dataset)} samples.")
         else:
-            # Logic load local (nếu bạn cần)
             raise NotImplementedError("Local dataset calibration not fully implemented in this refactor")
 
         self.input_name = input_name

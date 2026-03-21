@@ -50,12 +50,12 @@ preprocessor:
   pad_value: 0.0
 
 dataset:
-  use_huggingface: true
-  dataset_name: linhtran92/viet_bud500
-  hf_cache_dir: /home/datasets/linhtran92___viet_bud500/
-  train_filepath : viet_bud500_processed/train
-  test_filepath : viet_bud500_processed/test 
-  validation_filepath: viet_bud500_processed/validation
+  use_huggingface: false
+  # dataset_name: linhtran92/viet_bud500
+  hf_cache_dir: /home/datasets/viet_bud500
+  train_filepath : /home/datasets/viet_bud500/train
+  test_filepath : /home/datasets/viet_bud500/test 
+  validation_filepath: /home/datasets/viet_bud500/validation
   max_duration: 15.0
   target_sampling_rate: 16000
    
@@ -64,63 +64,43 @@ dataset:
   batch_size: 64                  # ← Giảm từ 64 (stability)
   num_worker: 12
 
-# train:
-#   output_dir: exps/bud500/conformer_phase1
-  
-#   # ===== CRITICAL: PHASE 1 SETTINGS =====
-#   freeze_encoder: true             # ← KEY: Freeze encoder
-#   resume_mode: "selective"         # ← Load encoder từ pretrained English
-#   debug_lr: true
-#   debug freeze: true               # ← DEBUG: In trạng thái freeze
-#   num_epoch: 15                    # ← Phase 1: 15 epochs
-  
-#   # ===== LR SETTINGS (WarmupLR) =====
-#   lr: 0.0005                       # ← Base LR (peak sau warmup)
-#   warmup_steps: 2000               # ← Giảm mạnh từ 10000
-#   weight_decay: 1.0e-5             # ← Regularization
-  
-#   acc_steps: 4                     # ← Giảm từ 8 (update thường hơn)
-  
-#   # ===== MIXED PRECISION =====
-#   use_amp: false                   # ← TẮT trong phase 1 (debug dễ hơn)
-  
-#   # ===== PRETRAINED PATH =====
-#   pretrained_path: /home/andyloou/conformer-small/vietasr/model_weights.pth
-  
-#   wandb_config:
-#     project: bud500-asr-phase1
-#     tag: conformer-freeze-encoder-v2
+train:
+  output_dir: exps/bud500/conformer_phase1
+  freeze_encoder: true          
+  resume_mode: "selective"        
+  debug_lr: true
+  debug freeze: true        
+  num_epoch: 15              
+  lr: 0.0005                       
+  warmup_steps: 2000             
+  weight_decay: 1.0e-5           
+  acc_steps: 4            
+  use_amp: false                  
+  pretrained_path: /path-to-pretrain-model-english
+  wandb_config:
+    project: bud500-asr-phase1
+    tag: conformer-freeze-encoder-v2
 
 train:
   output_dir: exps/bud500/conformer_phase2
-  
-  # ===== CRITICAL: PHASE 2 SETTINGS =====
-  freeze_encoder: false            # ← UNFREEZE encoder
-  resume_mode: "full"              # ← Load cả encoder + decoder từ phase 1
-  
-  num_epoch: 50                    # ← Phase 2: 50 epochs
-  
-  # ===== DIFFERENTIAL LR =====
-  encoder_lr: 5.0e-5               # ← Encoder pretrained: LR rất nhỏ
-  decoder_lr: 1.0e-3               # ← Decoder: LR vừa phải
-  other_lr: 5.0e-3                 # ← Spec_aug, batch_norm
-  
-  warmup_steps: 7000               # ← Tăng lại warmup
+  freeze_encoder: false        
+  resume_mode: "full"          
+  num_epoch: 50                 
+  encoder_lr: 5.0e-5              
+  decoder_lr: 1.0e-3              
+  other_lr: 5.0e-3                 
+  warmup_steps: 7000         
   weight_decay: 1.0e-5
-  
-  acc_steps: 4                   # ← Tăng lại
-  
-  # ===== MIXED PRECISION =====
-  use_amp: false                    # ← BẬT lại AMP (decoder đã stable)
-  
-  # ===== RESUME FROM PHASE 1 =====
-  pretrained_path: exps/bud500/conformer_phase2/best_viet_bud500_weight.pt
+  acc_steps: 4           
+  use_amp: false                  
+  pretrained_path: /path-to-last-epoch-frozen
   wandb_config:
     project: bud500-asr-phase2
     tag: conformer-unfreeze-encoder-v2
+
 decode:
   beam_size: 20
-  kenlm_path: lm_word_5gram_BIG.binary
+  kenlm_path: data/lm-5gram-2,3,4,5.binary
   word_vocab_path: null
   kenlm_alpha: 0.6
   kenlm_beta: 2.0

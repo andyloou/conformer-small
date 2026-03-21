@@ -178,12 +178,12 @@ def ctc_greedy_decode(log_probs, blank_id):
     return result
 
 if __name__ == "__main__":
-    ONNX_PATH = "conformer_quantized_vivos.onnx"
+    ONNX_PATH = "conformer_quantized.onnx"
     CONFIG_PATH = "config/phase2.yaml"
     
     test_onnx_model(
         onnx_path=ONNX_PATH,
         config_path=CONFIG_PATH,
         device="cuda",
-        local_dataset_path= "vivos_processed_fixed_v2"
+        local_dataset_path= "/home/datasets/viet_bud500"
     )

@@ -172,5 +172,5 @@ if __name__ == "__main__":
         config_path=CONFIG_PATH,
         use_huggingface=False,
         device="cuda",
-        local_dataset_path= "viet_bud500_processed"
+        local_dataset_path= "/home/datasets/viet_bud500"
     )
